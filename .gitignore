@@ -1,0 +1,9 @@
+node_modules/
+.next/
+test-results/
+playwright-report/
+*.tsbuildinfo
+research/statements.txt
+research/solutions.txt
+research/solutions.pdf
+tmp/
