@@ -26,6 +26,10 @@ import {
 } from "@/data/problems";
 import CompressionLab, { Bits } from "./CompressionLab";
 import TurningRedLab from "./TurningRedLab";
+import { deepDives } from "@/data/deep-dives";
+import { DeepLesson, Checkpoints } from "./DeepLesson";
+import { QueueLab, LiarLab, TrainLab } from "./ExtendedLabs";
+import GuidedLab from "./GuidedLabs";
 const statusNames = [
   "No estudiado",
   "Comprendiendo",
@@ -266,7 +270,7 @@ export default function Lab() {
               className={id === p.id ? "active" : ""}
             >
               <span
-                className={`mini-id ${p.id === "Y" || p.id === "P" ? "available" : ""}`}
+                className={`mini-id ${["Y", "P", "W", "U", "Q"].includes(p.id) ? "available" : ""}`}
               >
                 {p.id}
               </span>
@@ -533,9 +537,9 @@ export default function Lab() {
                         <div className="row-time">
                           <span>{Math.floor(s.seconds / 60)} min</span>
                           <small>
-                            {p.id === "Y" || p.id === "P"
+                            {["Y", "P", "W", "U", "Q"].includes(p.id)
                               ? "Laboratorio activo"
-                              : "Ficha de estudio"}
+                              : "Recorrido explicado"}
                           </small>
                         </div>
                         <button
@@ -553,9 +557,10 @@ export default function Lab() {
                   )}
                 </div>
                 <p className="catalog-footnote">
-                  La dificultad es una estimación pedagógica. Los laboratorios
-                  de Y y P ejecutan algoritmos reales; los demás módulos
-                  incluyen fichas de estudio con pendientes explícitos.
+                  La dificultad es una estimación pedagógica. Y, P, W, U y Q
+                  tienen laboratorios; los otros seis combinan recorridos
+                  explicados y resultados de algoritmos. Consulta el alcance de
+                  verificación de cada módulo.
                 </p>
               </section>
               <div className="bottom-note">
@@ -614,11 +619,7 @@ export default function Lab() {
                   <Clock size={15} />
                   {Math.floor(progress.seconds / 60)} min registrados
                 </span>
-                <span>
-                  {current.pending.length
-                    ? "Ficha · desarrollo avanzado pendiente"
-                    : "Laboratorio y algoritmo disponibles"}
-                </span>
+                <span>{deepDives[current.id].status}</span>
               </div>
               <nav className="journey" aria-label="Etapas de estudio">
                 {stages.map((s, i) => (
@@ -949,7 +950,7 @@ function Lesson({
         </div>
         <p className="small">
           Fuente: PDF de enunciados, páginas {p.pages}. Los ejemplos
-          modificables de Y y P están en la etapa Laboratorio.
+          modificables y recorridos explicados están en la etapa Laboratorio.
         </p>
       </>
     );
@@ -1039,26 +1040,13 @@ function Lesson({
       <>
         <span className="eyebrow">04 / CONSTRUIR LA SOLUCIÓN</span>
         <h2>De la intuición al algoritmo.</h2>
-        {p.pending.length > 0 && (
-          <p className="notice">
-            Este es un esquema de estudio. La sección de pendientes señala qué
-            falta para una solución completa y verificada.
-          </p>
-        )}
         <h3>Qué significa cada variable</h3>
         <ul>
           {p.variables.map((v) => (
             <li key={v}>{v}</li>
           ))}
         </ul>
-        <h3>Secuencia de trabajo</h3>
-        <ol className="algorithm-steps">
-          {p.steps.map((s) => (
-            <li key={s}>{s}</li>
-          ))}
-        </ol>
-        <h3>¿Por qué funciona?</h3>
-        <p>{p.proof}</p>
+        <DeepLesson id={p.id} />
         <h3>Casos que pueden romper una idea</h3>
         <ul>
           {p.edges.map((e) => (
@@ -1082,38 +1070,14 @@ function Lesson({
       <CompressionLab />
     ) : p.id === "P" ? (
       <TurningRedLab />
+    ) : p.id === "W" ? (
+      <LiarLab />
+    ) : p.id === "U" ? (
+      <TrainLab />
+    ) : p.id === "Q" ? (
+      <QueueLab />
     ) : (
-      <>
-        <span className="eyebrow">05 / LABORATORIO EN PREPARACIÓN</span>
-        <h2>El modelo antes que la animación.</h2>
-        <p className="lede">
-          Este módulo todavía no tiene un visualizador ejecutable. Puedes
-          trabajar el siguiente experimento en papel y conservar tus
-          observaciones.
-        </p>
-        <div className="reveal">
-          <h3>{p.questions[0]}</h3>
-          <p>{p.hints[0]}</p>
-          <label>
-            Mi experimento
-            <textarea
-              value={progress.answers.experiment || ""}
-              onChange={(e) =>
-                update({
-                  answers: { ...progress.answers, experiment: e.target.value },
-                })
-              }
-              placeholder="Mi caso pequeño, estado inicial y operaciones…"
-            />
-          </label>
-        </div>
-        <h3>Qué falta para ejecutarlo</h3>
-        <ul>
-          {p.pending.map((s) => (
-            <li key={s}>{s}</li>
-          ))}
-        </ul>
-      </>
+      <GuidedLab id={p.id} />
     );
   if (stage === 5)
     return (
@@ -1250,11 +1214,24 @@ function Lesson({
           Resolver un ejercicio no marca automáticamente que puedas explicar
           todo el problema. Esa evaluación la haces tú.
         </p>
+        <Checkpoints
+          id={p.id}
+          answers={progress.answers}
+          onChange={(answers) => update({ answers })}
+        />
       </>
     );
-  return <Oral problem={p} />;
+  return <Oral problem={p} progress={progress} update={update} />;
 }
-function Oral({ problem: p }: { problem: Problem }) {
+function Oral({
+  problem: p,
+  progress,
+  update,
+}: {
+  problem: Problem;
+  progress: Progress;
+  update: (patch: Partial<Progress>) => void;
+}) {
   const [seconds, setSeconds] = useState(0),
     [running, setRunning] = useState(false),
     [hidden, setHidden] = useState(true);
@@ -1337,6 +1314,11 @@ function Oral({ problem: p }: { problem: Problem }) {
         ))}
       </div>
       <h3>El profesor podría preguntar…</h3>
+      <Checkpoints
+        id={p.id}
+        answers={progress.answers}
+        onChange={(answers) => update({ answers })}
+      />
       <ul>
         {p.followups.map((q) => (
           <li key={q}>{q}</li>

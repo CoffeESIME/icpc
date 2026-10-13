@@ -416,6 +416,12 @@ export default function TurningRedLab() {
               <TracePlayer
                 events={result.trace}
                 code={redPseudocode}
+                predict={(e) => ({
+                  question: `Operación: ${e.operation}. Predice el vector de botones después del paso (separados por comas; ? para desconocido). Usa las ecuaciones del grafo.`,
+                  answer: e.after.values
+                    .map((x) => (x === null ? "?" : x))
+                    .join(","),
+                })}
                 render={snapshot}
               />
             </>

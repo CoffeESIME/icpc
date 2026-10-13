@@ -6,9 +6,9 @@
 2. **Pensar:** responder preguntas específicas del problema; guardar cada respuesta. Las pistas se abren una a una.
 3. **Comparar:** confrontar estrategias reales, incluidas búsquedas pequeñas que sirven de oráculo. No inventar tres opciones por uniformidad.
 4. **Construir:** nombrar variables, describir pasos, discutir correctitud y casos límite. Los módulos avanzados distinguen esquema de prueba completa.
-5. **Experimentar:** Y y P permiten manipular entradas y reproducir estados auténticos. Los otros módulos identifican explícitamente la ausencia de simulador y ofrecen un experimento escrito.
+5. **Experimentar:** Y/P/W/U/Q permiten manipular entradas y reproducir estados auténticos. S/R/X/Z permiten modificar ejemplos pequeños y T/V muestran resultados calculados. Un segundo recorrido manual explica el caso de estudio y se etiqueta como razonamiento, no como ejecución general.
 6. **Contar:** explicar tiempo y memoria a partir de operaciones. La tabla de crecimiento es matemática, no una medición de velocidad ni una lista de algoritmos del problema.
-7. **Comprobar:** una pregunta con retroalimentación y justificación escrita por problema. Resolverla no certifica dominio.
+7. **Comprobar:** una pregunta con retroalimentación y justificación escrita, más cuatro preguntas abiertas con rúbricas ocultas hasta responder. Resolverlas no certifica dominio: la marca es una autoevaluación explícita.
 8. **Exponer:** ensayo con guion oculto de forma predeterminada y preguntas posteriores. Ritmo: 45 s definición, 45 s modelo, 105 s algoritmo, 60 s correctitud y 45 s complejidad.
 
 ## Estado y tiempo
@@ -17,9 +17,9 @@ El estudiante elige entre no estudiado, comprendiendo, puedo explicarlo y necesi
 
 ## Contenido y evidencia
 
-`Problem` define material, fuentes derivadas del identificador, ejemplos, preguntas, estrategias, variables, pasos, correctitud, complejidad, casos límite, guion, ejercicio, estado de verificación y pendientes. Todo se encuentra en `src/data/problems.ts`, sin lógica de renderizado ni ejecuciones.
+`Problem` integra los enunciados y ejercicios de `src/data/problems.ts` con la solución pedagógica de `src/data/deep-dives.ts`. `DeepDive` define ejemplo paso a paso, pseudocódigo comentado, estructuras, prueba, coste, cinco bloques orales, cuatro rúbricas, fuentes y alcance de verificación. No contiene renderizado ni ejecuciones.
 
-El contenido de U, Q, T, V, X, R, S y Z no debe usarse como sustituto de una solución formal completa. Los campos `pending`, la etapa Construir, la etapa Laboratorio y la página Fuentes hacen visible ese límite. W tiene un argumento de unicidad desarrollado, pero carece aún de simulador y pruebas del protocolo.
+S usa un teorema estructural publicado cuyo papel se explica, sin reproducir toda su demostración: mantiene estado parcial. R desarrolla la generación y propagación de permutaciones. T combina análisis real de precisión y contraste con un oráculo geométrico independiente. Los otros diez módulos se identifican como verificados localmente. Ningún indicador significa aceptación por el juez externo.
 
 ## Criterio para ampliar
 

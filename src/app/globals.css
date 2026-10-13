@@ -14,6 +14,241 @@
   --serif: Georgia, "Times New Roman", serif;
   color-scheme: light;
 }
+
+/* Educational views share the existing palette and typography. */
+.lesson .verification {
+  border-left: 3px solid var(--green);
+  padding: 12px 20px;
+  margin: 22px 0;
+  background: var(--green-light);
+}
+.verification p {
+  margin: 6px 0;
+}
+.verification a {
+  color: var(--green);
+  text-decoration: underline;
+}
+.worked-example {
+  padding-left: 24px;
+}
+.worked-example li {
+  padding: 0 0 18px 12px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+.worked-example h4 {
+  font-size: 17px;
+  margin: 4px 0;
+}
+.state-text {
+  background: var(--code);
+  padding: 15px;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.explained-code {
+  padding-left: 24px;
+}
+.explained-code li {
+  padding: 8px 0;
+}
+.explained-code code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.education-table {
+  width: 100%;
+  overflow-x: auto;
+  margin: 14px 0;
+}
+.education-table table {
+  border-collapse: collapse;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+.education-table caption {
+  text-align: left;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.education-table th,
+.education-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+.education-table th {
+  font-size: 12px;
+}
+.highlight {
+  background: var(--green-light);
+  font-weight: 700;
+}
+.lab-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 14px;
+  margin: 24px 0;
+}
+.lab-form label {
+  flex: 1 1 130px;
+  display: grid;
+  gap: 6px;
+}
+.lab-form input,
+.lab-form select,
+.prediction input:not([type="checkbox"]) {
+  padding: 10px;
+  min-width: 0;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.result-banner {
+  padding: 16px 0;
+  border-block: 1px solid var(--line);
+  font-size: 18px;
+}
+.track-output {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.track-view {
+  width: 100%;
+  height: 300px;
+}
+.track-view rect {
+  fill: var(--surface);
+  stroke: var(--line);
+  stroke-width: 0.5;
+}
+.track-view path {
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 3;
+}
+.track-view text {
+  fill: var(--muted);
+  font-size: 6px;
+}
+.track-view circle {
+  fill: var(--clay);
+}
+.education-graph,
+.matching-view {
+  width: 100%;
+  max-height: 350px;
+}
+.education-graph line,
+.matching-view line {
+  stroke: var(--line);
+  stroke-width: 2;
+}
+.education-graph circle {
+  fill: var(--surface);
+  stroke: var(--green);
+  stroke-width: 2;
+}
+.education-graph .highlight circle {
+  fill: var(--accent);
+}
+.education-graph text,
+.matching-view text {
+  fill: var(--ink);
+  font-size: 14px;
+}
+.education-graph .highlight text {
+  fill: #26372e;
+}
+.education-graph .vertex-index {
+  font-size: 10px;
+  fill: var(--muted);
+}
+.matching-view .matched {
+  stroke: var(--green);
+  stroke-width: 4;
+}
+.modular-view {
+  font-size: 18px;
+  padding: 15px;
+  background: var(--code);
+}
+.residues {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+.residues span {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+.hull-view {
+  width: 100%;
+  max-width: 460px;
+}
+.hull-view path {
+  fill: var(--green-light);
+  stroke: var(--green);
+  stroke-width: 2;
+}
+.hull-view line {
+  stroke: var(--clay);
+  stroke-dasharray: 4 4;
+}
+.hull-view circle {
+  fill: var(--green);
+}
+.hull-view text {
+  fill: var(--ink);
+  font-size: 10px;
+}
+.oral-checkpoints article {
+  border-top: 1px solid var(--line);
+  padding: 24px 0;
+}
+.oral-checkpoints .guided-question {
+  margin: 12px 0;
+}
+.oral-checkpoints textarea {
+  min-height: 110px;
+}
+.oral-checkpoints input[type="checkbox"],
+.prediction input[type="checkbox"] {
+  width: auto;
+}
+.prediction {
+  border-block: 1px solid var(--line);
+  padding: 18px 0;
+  margin: 12px 0;
+}
+.prediction button {
+  margin: 10px 0;
+}
+@media (max-width: 640px) {
+  .education-table th,
+  .education-table td {
+    padding: 6px;
+    font-size: 12px;
+  }
+  .state-pair > div {
+    min-width: 0;
+  }
+  .lab-form {
+    align-items: stretch;
+  }
+  .lesson .verification {
+    padding: 12px;
+  }
+}
 :root[data-theme="dark"] {
   --bg: #19221d;
   --surface: #212c25;

@@ -206,6 +206,10 @@ export default function CompressionLab() {
           <TracePlayer
             events={trace}
             code={compressionPseudocode}
+            predict={(e) => ({
+              question: `Operación: ${e.operation}. Escribe la cadena que quedará después; el estado de partida está visible.`,
+              answer: e.after,
+            })}
             render={(s, a) => <Bits value={s} active={a} />}
           />
         </>

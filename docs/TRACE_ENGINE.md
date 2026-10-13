@@ -28,3 +28,13 @@ Las pruebas exhaustivas cotejan el resultado con todas las reducciones posibles,
 Un intento fallido no significa que todo el problema sea imposible. Solo se declara imposible si una luz sin botones no es roja o si ninguno de los tres intentos resuelve una componente. Elegir mínimos de componentes independientes es lo que produce el mínimo global.
 
 Las pruebas contrastan el resultado con enumeración de 3ᵇ asignaciones y comprueban la concatenación `evento[i].after = evento[i+1].before`, serialización JSON y validez de las pulsaciones finales.
+
+## Segunda iteración
+
+- Q guarda árbol Fenwick, etiquetas activas, retiradas y acumulador entero doble; sin traza no mantiene el arreglo activo ni realiza eliminaciones lineales.
+- W registra cada terna resuelta y sus acuerdos. Las cinco respuestas son datos del simulador; el solucionador no recibe la posición de la mentira.
+- U registra el verificador de la cadena generada: posición, orientación y celdas. El dibujo une puntos medios dentro de cada celda; no pretende mostrar la búsqueda de una plantilla.
+- S registra celdas de la recurrencia; R ejecuta rotaciones concretas; X conserva el matching completo y muestra un subgrafo filtrado; Z agrupa resultados de proyección, masas y DP. Las agrupaciones no inventan estados intermedios.
+- `ManualWalk` reproduce exclusivamente las etapas escritas y revisadas de un ejemplo. Usa `pseudocode=-1` y una advertencia explícita: es una derivación, no una animación de ejecución.
+- `TracePlayer.predict` es opcional. En modo de anticipación oculta el estado posterior, variables y explicación hasta comparar la respuesta; desactiva reproducción automática. No cambia eventos ni algoritmos. Los controles de rango usan `useId` para permitir varios reproductores en una página.
+- `StateTable`, `FenwickView`, `GraphView`, `MatchingView`, `ModularView` y `TrackView` son presentaciones reutilizables. Reciben estados; no deciden soluciones.

@@ -34,7 +34,9 @@ test("dashboard, once problemas, búsqueda y fichas", async ({ page }) => {
     page.getByRole("heading", { name: "Archaeological Recovery", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "04 Construir" }).click();
-  await expect(page.getByText("Pendientes de verificación")).toBeVisible();
+  await expect(page.locator(".verification")).toContainText(
+    "Verificado localmente",
+  );
   expect(errors).toEqual([]);
   expect(
     await page.evaluate(
@@ -183,19 +185,17 @@ test("temporizador oral permite ocultar, pausar, reiniciar y terminar", async ({
   await page.getByRole("button", { name: "08 Exponer" }).click();
   await expect(page.getByRole("timer")).toHaveText("5:00");
   await expect(
-    page.getByText(
-      "Defino XX → X y busco una cadena final de longitud mínima.",
-      { exact: true },
-    ),
+    page.getByText("Defino XX→X con bloques, no solo caracteres.", {
+      exact: true,
+    }),
   ).not.toBeVisible();
   await page
     .getByRole("checkbox", { name: "Practicar sin mostrar el guion" })
     .uncheck();
   await expect(
-    page.getByText(
-      "Defino XX → X y busco una cadena final de longitud mínima.",
-      { exact: true },
-    ),
+    page.getByText("Defino XX→X con bloques, no solo caracteres.", {
+      exact: true,
+    }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Iniciar práctica" }).click();
   await page.clock.fastForward(46000);
