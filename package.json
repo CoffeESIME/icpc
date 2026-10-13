@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "code:catalog": "node scripts/code-catalog.mjs",
+    "predev": "npm run code:catalog",
+    "prebuild": "npm run code:catalog",
+    "pretest": "npm run code:catalog",
     "dev": "next dev --hostname 0.0.0.0",
     "build": "next build",
     "start": "next start --hostname 0.0.0.0",

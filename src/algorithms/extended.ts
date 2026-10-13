@@ -7,10 +7,12 @@ export class Fenwick {
     this.tree = Array(n + 1).fill(0);
   }
   add(i: number, delta: number) {
+    // lowbit = i & -i: subir a cada intervalo que contiene esta etiqueta.
     for (; i <= this.n; i += i & -i) this.tree[i] += delta;
   }
   sum(i: number) {
     let s = 0;
+    // Cada salto quita un intervalo disjunto del prefijo [1,i].
     for (; i > 0; i -= i & -i) s += this.tree[i];
     return s;
   }
@@ -53,6 +55,7 @@ export function solveQueue(order: number[], trace = false) {
   for (let i = 0; i < n; i++) {
     const before = trace ? state() : null,
       q = order[i];
+    // Retirar ANTES de consultar: quedan exactamente n-i-1 etiquetas.
     bit.add(q, -1);
     if (trace) {
       active.splice(active.indexOf(q), 1);
@@ -61,6 +64,7 @@ export function solveQueue(order: number[], trace = false) {
     const h = i ? Math.min(order[i - 1], q) : q,
       visited: number[] = [];
     for (let j = h; j > 0; j -= j & -j) visited.push(j);
+    // Cada elegible aporta 1/2; twice acumula el doble como entero.
     const count = i ? n - i - 1 - bit.sum(h) : n - q;
     twice += count;
     if (before)
@@ -74,6 +78,11 @@ export function solveQueue(order: number[], trace = false) {
         variables: { umbral: h, elegibles: count, esperanza: twice / 2 },
         invariant: "BIT cuenta exactamente las etiquetas aún no retiradas.",
         partial: String(twice / 2),
+        source: {
+          file: "extended",
+          anchor: "twice += count;",
+          scope: "instruction",
+        },
       });
   }
   return { answer: twice / 2, events };
@@ -135,6 +144,7 @@ export function solveLiar(replies: number[], trace = false) {
     accepted: false,
   };
   let answer: number[] | null = null;
+  // i<j<k enumera 10 ternas. Al menos una evita la única mentira.
   triples: for (let i = 0; i < 3; i++)
     for (let j = i + 1; j < 4; j++)
       for (let k = j + 1; k < 5; k++) {
@@ -148,6 +158,7 @@ export function solveLiar(replies: number[], trace = false) {
               ),
             ),
           );
+        // Cramer: numeradores divisibles por d, sin tolerancias numéricas.
         const candidate = nums.map((x) => x / d || 0),
           integral =
             nums.every((x) => x % d === 0) && candidate.every((x) => x >= 0);
@@ -177,6 +188,11 @@ export function solveLiar(replies: number[], trace = false) {
             invariant:
               "La terna verdadera concuerda con al menos cuatro respuestas.",
             partial: next.accepted ? candidate.join(", ") : "sin aceptar",
+            source: {
+              file: "extended",
+              anchor: "const agreements = integral",
+              scope: "block",
+            },
           });
         state = next;
         if (next.accepted) {
@@ -216,6 +232,7 @@ export function solveBridge(times: number[], capacity: number, trace = false) {
         choice = -1;
       const lo = n <= C ? 2 : Math.max(0, C + 2 - n),
         hi = n <= C ? Math.min(n, e + 1) : Math.min(C - 1, e + 1);
+      // El orden (n,e) garantiza que dp[nextN][e+1-i] ya esté calculado.
       for (let i = lo; i <= hi; i++) {
         const nextN = n <= C ? i : n - C + i,
           candidate = t[n] + prefix[i] + dp[nextN][e + 1 - i];
@@ -252,6 +269,7 @@ export function leverDistribution(levers: number[][], k: number) {
   counts[0] = 1;
   const layers = [counts];
   for (const u of levers) {
+    // No usar u conserva counts; usarla una vez desplaza la capa anterior.
     const next = [...counts];
     vectors.forEach((v, s) => (next[encode(vectorAdd(v, u))] += counts[s]));
     counts = next;
@@ -291,6 +309,7 @@ export function solveLevers(counts: number[], k: number) {
       }
     return { x, row, f };
   });
+  // Inversión por incidencia: recuperar cuántas palancas están en el subespacio.
   const mass = (generators: number[][]) => {
     const h = projections.filter((p) =>
       generators.every((g) => dot(p.x, g) === 0),
@@ -315,6 +334,7 @@ export function solveLevers(counts: number[], k: number) {
   }
   if (levers.length !== n) throw Error("Conteos incompatibles.");
   const { counts: initial, layers } = leverDistribution(levers, k);
+  // Negar un subconjunto traslada la distribución: objetivo[s] = inicial[s+shift].
   const shift = vectors.findIndex(
     (v, i) =>
       initial[i] > 0 &&

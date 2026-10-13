@@ -1,5 +1,29 @@
 # Avance · ICPC Algorithm Lab
 
+## 2026-10-13 · De la idea al código
+
+### Implementado
+
+- Los once módulos incorporan cuatro vistas dentro de **Construir → De la idea al código**: pseudocódigo detallado, código TypeScript completo, completar código y ejecución. Se explican contratos, índices, variables, inicialización, ramas, ciclos, retornos y costes. Cada bloque remite a una instrucción y línea real.
+- `implementation-lessons.ts` contiene el desarrollo pedagógico. `CodeLesson` reutiliza los laboratorios y el progreso local; los intentos se guardan y las soluciones empiezan ocultas. Se puede terminar un intento y revelar la respuesta sin acertar ni escribir una cantidad mínima.
+- El código mostrado y descargable se genera desde los archivos reales mediante `scripts/code-catalog.mjs`. Incluye módulos íntegros, tipos, auxiliares y la dependencia `trace.ts`; la vista comienza por la función relevante. No hay una segunda versión manuscrita de los solucionadores. El catálogo se actualiza con `predev`, `prebuild` y `pretest`.
+- Compression explicita first, last, different, i y las tres ramas en el propio solucionador. El observador opcional produce la ejecución directa sin duplicar el algoritmo. Se conserva el laboratorio constructivo XX → X y se explica por qué la solución O(n) no necesita realizar eliminaciones.
+- Los eventos de Y/P/Q/W/U y las vistas calculadas de S/X/Z enlazan instrucciones o bloques reales. Se distingue una instantánea de instrucción de un resumen de bloque. R/T/V mantienen recorridos explicados y resultados calculados: no se les atribuye una traza interna de lowlink, búsquedas ternarias o envolvente que no existe.
+- Se distingue construcción frente a verificación en U, esperanza frente a realización física en Q, coste DP frente a calendario en S y clasificación frente a rotaciones en R.
+- Los ejercicios comparan expresiones normalizadas con una referencia; lo advierten expresamente. No se ejecuta texto del estudiante y una expresión equivalente puede no ser reconocida. Hay pistas y solución explicada revelable.
+
+### Evidencia y límites
+
+- **30 grupos Vitest**, incluidos los 24 anteriores. Los nuevos verifican referencias al código, integridad de copias descargables, carga de módulos TypeScript con su dependencia, los once ejemplos de llamada y trazas del solucionador. Compression comprueba estados e invariantes del barrido para las 510 cadenas de longitud 1..8; conserva el oráculo exhaustivo de reducción hasta longitud 9.
+- **22 flujos Playwright**, once por viewport (escritorio y móvil), conservando los 18 anteriores. Comprueban las cuatro vistas en los once módulos, ocultación inicial, soluciones accesibles, persistencia de intentos, sincronización de líneas en Y, entradas inválidas y ausencia de desbordamiento horizontal. TypeScript y build de producción correctos.
+- Las pruebas detectaron y corrigieron una transcripción incorrecta de la salida del ejemplo U antes de publicarlo. No fue un cambio en el algoritmo.
+- Vista de producción actualizada en localhost:3000. Inspección visual de código en escritorio y tablas de ejecución en móvil; comprobadas descarga del archivo real, línea activa, ausencia de errores de página y ausencia de desbordamiento. Se conservan capturas locales en `tmp/` (no distribuido).
+- Se conserva el estado anterior: **P/Q/R/T/U/V/W/X/Y/Z verificados localmente; S parcialmente verificado**. S aún necesita una exposición autosuficiente del teorema de normalización de horarios de Backhouse–Truong. Ningún módulo se declara aceptado por un juez externo.
+- Las funciones reciben estructuras ya leídas; no se presentan como programas de consola con protocolo de juez. W incluye el decodificador y simulador local, no transporte interactivo/flush. Las cotas de los solucionadores excluyen copias educativas de la traza.
+- No se añadió Python: se prioriza una única referencia TypeScript ejecutada por la aplicación. No se ha verificado con lectores de pantalla, Safari/Firefox o dispositivos móviles físicos.
+
+El historial siguiente describe las iteraciones anteriores; los recuentos de pruebas vigentes son los de esta sección.
+
 ## 2026-10-12 · Segunda iteración
 
 ### Contenido y preparación oral

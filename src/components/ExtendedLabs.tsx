@@ -11,7 +11,7 @@ import {
 } from "@/algorithms/extended";
 import { solveTrain, checkTrack, trainCode } from "@/algorithms/trains";
 import { FenwickView, StateTable, TrackView } from "./EducationalViews";
-import { Verification } from "./DeepLesson";
+import { Verification } from "./Verification";
 export function QueueLab() {
   const [input, setInput] = useState("4 2 5 3 1"),
     [mask, setMask] = useState(0),

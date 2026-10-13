@@ -1,0 +1,335 @@
+{
+  "compression": {
+    "path": "src/algorithms/compression.ts",
+    "code": "import { event, type TraceEvent } from \"./trace\";\nexport type Reduction = { start: number; length: number };\nexport function validateBinary(s: string) {\n  if (!/^[01]+$/.test(s))\n    throw new Error(\"Escribe una cadena no vacía de ceros y unos.\");\n}\nexport type CompressionSnapshot = {\n  line: string;\n  first: string;\n  last: string;\n  different: boolean;\n  i: number;\n  result: string;\n};\nexport function compress(\n  s: string,\n  observe?: (state: CompressionSnapshot) => void,\n): string {\n  validateBinary(s);\n  // Los índices empiezan en cero: el último es longitud menos uno.\n  const first = s[0];\n  const last = s[s.length - 1];\n  let different = false;\n  let i = 1;\n  let result = \"\";\n  // El observador es opcional: sin él no se almacenan instantáneas.\n  const report = (line: string) =>\n    observe?.({ line, first, last, different, i, result });\n  report(\"let different = false;\");\n  // Invariante: different indica si el prefijo inspeccionado contiene otro bit.\n  for (; i < s.length; i++) {\n    if (s[i] !== first) different = true;\n    report(\"if (s[i] !== first) different = true;\");\n  }\n  // Tres casos exhaustivos. No necesitamos modificar la cadena original.\n  if (!different) {\n    result = first;\n    report(\"result = first;\");\n  } else if (first !== last) {\n    result = first + last;\n    report(\"result = first + last;\");\n  } else {\n    const other = first === \"0\" ? \"1\" : \"0\";\n    result = first + other + last;\n    report(\"result = first + other + last;\");\n  }\n  report(\"return result;\");\n  return result;\n}\nexport function reductions(s: string): Reduction[] {\n  validateBinary(s);\n  const result: Reduction[] = [];\n  for (let start = 0; start < s.length; start++)\n    for (let length = 1; start + 2 * length <= s.length; length++)\n      if (\n        s.slice(start, start + length) ===\n        s.slice(start + length, start + 2 * length)\n      )\n        result.push({ start, length });\n  return result;\n}\nexport function reduce(s: string, r: Reduction): string {\n  if (\n    !Number.isInteger(r.start) ||\n    !Number.isInteger(r.length) ||\n    r.start < 0 ||\n    r.length < 1 ||\n    r.start + 2 * r.length > s.length ||\n    s.slice(r.start, r.start + r.length) !==\n      s.slice(r.start + r.length, r.start + 2 * r.length)\n  )\n    throw new Error(\n      \"La operación requiere dos bloques consecutivos idénticos.\",\n    );\n  return s.slice(0, r.start + r.length) + s.slice(r.start + 2 * r.length);\n}\nexport function compressionTrace(input: string): TraceEvent<string>[] {\n  validateBinary(input);\n  const events: TraceEvent<string>[] = [];\n  let s = input;\n  const emit = (\n    next: string,\n    operation: string,\n    explanation: string,\n    active: number[],\n    line: number,\n  ) => {\n    event(events, s, next, {\n      operation,\n      explanation,\n      active,\n      pseudocode: line,\n      variables: {\n        longitud: next.length,\n        primero: next[0],\n        último: next[next.length - 1],\n      },\n      invariant:\n        \"Se conservan el primer bit, el último y el conjunto de símbolos.\",\n      partial: next,\n    });\n    s = next;\n  };\n  emit(s, \"Leer la cadena\", \"Todavía no se ha eliminado ningún bloque.\", [], 0);\n  for (let i = 0; i + 1 < s.length;) {\n    if (s[i] === s[i + 1]) {\n      emit(\n        reduce(s, { start: i, length: 1 }),\n        \"Colapsar un par igual\",\n        `Los bits ${i + 1} y ${i + 2} son copias del mismo bloque. XX → X.`,\n        [i, i + 1],\n        1,\n      );\n    } else i++;\n  }\n  while (s.length >= 4)\n    emit(\n      reduce(s, { start: 0, length: 2 }),\n      \"Reducir el prefijo alternante\",\n      `El prefijo ${s.slice(0, 4)} contiene dos copias de ${s.slice(0, 2)}.`,\n      [0, 1, 2, 3],\n      2,\n    );\n  emit(\n    s,\n    \"Cota alcanzada\",\n    \"La longitud coincide con la cota impuesta por extremos y símbolos presentes.\",\n    [],\n    3,\n  );\n  return events;\n}\nexport const compressionPseudocode = [\n  \"leer cadena binaria\",\n  \"mientras haya bits adyacentes iguales: XX → X, |X|=1\",\n  \"mientras longitud ≥ 4: reducir prefijo XX, |X|=2\",\n  \"devolver cadena mínima\",\n];\n",
+    "declarations": [
+      {
+        "name": "Reduction",
+        "start": 2,
+        "end": 2
+      },
+      {
+        "name": "validateBinary",
+        "start": 3,
+        "end": 6
+      },
+      {
+        "name": "CompressionSnapshot",
+        "start": 7,
+        "end": 14
+      },
+      {
+        "name": "compress",
+        "start": 15,
+        "end": 49
+      },
+      {
+        "name": "reductions",
+        "start": 50,
+        "end": 61
+      },
+      {
+        "name": "reduce",
+        "start": 62,
+        "end": 76
+      },
+      {
+        "name": "compressionTrace",
+        "start": 77,
+        "end": 132
+      },
+      {
+        "name": "compressionPseudocode",
+        "start": 133,
+        "end": 138
+      }
+    ]
+  },
+  "turning-red": {
+    "path": "src/algorithms/turning-red.ts",
+    "code": "import { event, type TraceEvent } from \"./trace\";\nexport type Lights = { colors: number[]; buttons: number[][] };\nexport type RedState = {\n  values: (number | null)[];\n  root: number | null;\n  trial: number | null;\n  cost: number;\n  valid: boolean | null;\n  done: boolean;\n};\nexport type RedResult = {\n  cost: number | null;\n  presses: number[] | null;\n  trace: TraceEvent<RedState>[];\n};\nexport const mod = (v: number) => ((v % 3) + 3) % 3;\nexport function validateLights(input: Lights) {\n  if (\n    !input.colors.length ||\n    input.colors.some((c) => !Number.isInteger(c) || c < 0 || c > 2)\n  )\n    throw new Error(\"Cada luz debe tener color R, G o B.\");\n  const counts = Array(input.colors.length).fill(0);\n  for (const b of input.buttons) {\n    if (b.length === 0)\n      throw new Error(\"Cada botón debe controlar al menos una luz.\");\n    const seen = new Set<number>();\n    for (const l of b) {\n      if (!Number.isInteger(l) || l < 0 || l >= counts.length || seen.has(l))\n        throw new Error(\"Conexión inválida o repetida.\");\n      seen.add(l);\n      if (++counts[l] > 2)\n        throw new Error(\"Una luz no puede tener más de dos botones.\");\n    }\n  }\n}\nexport function parseLights(raw: string): Lights {\n  const tokens = raw.trim().split(/\\s+/);\n  let p = 0;\n  const l = Number(tokens[p++]),\n    b = Number(tokens[p++]);\n  if (\n    !Number.isInteger(l) ||\n    l < 1 ||\n    l > 200000 ||\n    !Number.isInteger(b) ||\n    b < 0 ||\n    b > 2 * l\n  )\n    throw new Error(\"Dimensiones inválidas.\");\n  const text = tokens[p++] || \"\";\n  if (text.length !== l || !/^[RGB]+$/.test(text))\n    throw new Error(\"La cadena de colores debe tener l caracteres R, G o B.\");\n  const buttons: number[][] = [];\n  for (let i = 0; i < b; i++) {\n    const k = Number(tokens[p++]);\n    if (!Number.isInteger(k) || k < 1 || k > l)\n      throw new Error(\"Cantidad de conexiones inválida.\");\n    const lights: number[] = [];\n    for (let j = 0; j < k; j++) lights.push(Number(tokens[p++]) - 1);\n    buttons.push(lights);\n  }\n  if (p !== tokens.length) throw new Error(\"Faltan datos o sobran valores.\");\n  const result = { colors: [...text].map((c) => \"RGB\".indexOf(c)), buttons };\n  validateLights(result);\n  return result;\n}\nexport function owners(input: Lights) {\n  const result: number[][] = input.colors.map(() => []);\n  input.buttons.forEach((list, b) => list.forEach((l) => result[l].push(b)));\n  return result;\n}\nexport function press(input: Lights, b: number, colors = input.colors) {\n  return colors.map((c, l) => (input.buttons[b].includes(l) ? mod(c + 1) : c));\n}\nexport function solveRed(input: Lights, withTrace = false): RedResult {\n  validateLights(input);\n  const { colors, buttons } = input,\n    n = buttons.length,\n    own = owners(input);\n  const adj: { to: number; color: number; light: number }[][] = Array.from(\n    { length: n },\n    () => [],\n  );\n  const trace: TraceEvent<RedState>[] = [];\n  let current: RedState = {\n    values: Array(n).fill(null),\n    root: null,\n    trial: null,\n    cost: 0,\n    valid: null,\n    done: false,\n  };\n  const emit = (\n    patch: Partial<RedState>,\n    operation: string,\n    explanation: string,\n    active: number[],\n    line: number,\n  ) => {\n    if (!withTrace) return;\n    const after = { ...current, ...patch };\n    event(trace, current, after, {\n      operation,\n      explanation,\n      active,\n      pseudocode: line,\n      variables: {\n        raíz: after.root === null ? \"—\" : after.root + 1,\n        intento: after.trial ?? \"—\",\n        coste: after.cost,\n      },\n      invariant:\n        \"Cada luz comprobada exige (color + suma de pulsaciones) mod 3 = 0.\",\n      partial:\n        after.valid === false ? \"Intento incompatible\" : String(after.cost),\n      source: {\n        file: \"turning-red\",\n        anchor: (\n          {\n            \"Preparar restricciones\":\n              \"const adj: { to: number; color: number; light: number }[][] = Array.from(\",\n            \"Luz sin control\": \"if (own[l].length === 0 && colors[l] !== 0) {\",\n            \"Fijar raíz\": \"values[root] = trial;\",\n            Propagar: \"const forced = mod(-e.color - values[u]);\",\n            Contradicción: \"} else if (values[e.to] !== forced) {\",\n            \"Restricción incumplida\": \"if (mod(sum) !== 0) {\",\n            \"Intento válido\":\n              \"const cost = component.reduce((s, u) => s + values[u], 0);\",\n            \"Elegir mínimo de componente\": \"component.forEach((u, i) => {\",\n            Imposible: \"if (best === Infinity) {\",\n            \"Solución mínima\":\n              \"return { cost: total, presses: answer, trace };\",\n          } as Record<string, string>\n        )[operation],\n        scope: \"block\",\n      },\n    });\n    current = after;\n  };\n  emit(\n    {},\n    \"Preparar restricciones\",\n    \"R=0, G=1, B=2. Cada variable toma un valor de 0 a 2.\",\n    [],\n    0,\n  );\n  for (let l = 0; l < colors.length; l++) {\n    if (own[l].length === 0 && colors[l] !== 0) {\n      emit(\n        { valid: false, done: true },\n        \"Luz sin control\",\n        `L${l + 1} no es roja y ningún botón puede cambiarla.`,\n        [],\n        0,\n      );\n      return { cost: null, presses: null, trace };\n    }\n    if (own[l].length === 2) {\n      const [a, b] = own[l];\n      adj[a].push({ to: b, color: colors[l], light: l });\n      adj[b].push({ to: a, color: colors[l], light: l });\n    }\n  }\n  const visited = Array(n).fill(false),\n    answer = Array(n).fill(0),\n    values: number[] = Array(n).fill(-1);\n  let total = 0;\n  for (let root = 0; root < n; root++) {\n    if (visited[root]) continue;\n    const component: number[] = [],\n      stack = [root],\n      lights = new Set<number>();\n    visited[root] = true;\n    while (stack.length) {\n      const u = stack.pop()!;\n      component.push(u);\n      buttons[u].forEach((l) => lights.add(l));\n      for (const e of adj[u])\n        if (!visited[e.to]) {\n          visited[e.to] = true;\n          stack.push(e.to);\n        }\n    }\n    let best = Infinity,\n      bestValues: number[] = [];\n    for (let trial = 0; trial < 3; trial++) {\n      component.forEach((u) => (values[u] = -1));\n      values[root] = trial;\n      const todo = [root];\n      let valid = true;\n      const snapshot = () =>\n        answer.map((v, u) =>\n          visited[u] ? (values[u] < 0 ? null : values[u]) : null,\n        );\n      if (withTrace)\n        emit(\n          {\n            values: snapshot(),\n            root,\n            trial,\n            cost: 0,\n            valid: null,\n            done: false,\n          },\n          \"Fijar raíz\",\n          `Probamos x${root + 1} = ${trial}. Es una de las tres posibilidades de esta componente.`,\n          [root],\n          2,\n        );\n      while (todo.length && valid) {\n        const u = todo.pop()!;\n        for (const e of adj[u]) {\n          // color + x_u + x_v ≡ 0 (mod 3): fijar x_u determina x_v.\n          const forced = mod(-e.color - values[u]);\n          if (values[e.to] === -1) {\n            values[e.to] = forced;\n            todo.push(e.to);\n            if (withTrace)\n              emit(\n                { values: snapshot() },\n                \"Propagar\",\n                `L${e.light + 1}: x${e.to + 1} = (−${e.color}−${values[u]}) mod 3 = ${forced}.`,\n                [u, e.to],\n                3,\n              );\n          } else if (values[e.to] !== forced) {\n            valid = false;\n            emit(\n              { valid: false },\n              \"Contradicción\",\n              `L${e.light + 1} exige x${e.to + 1}=${forced}, pero ya vale ${values[e.to]}.`,\n              [u, e.to],\n              4,\n            );\n            break;\n          }\n        }\n      }\n      if (valid)\n        for (const l of lights) {\n          const sum = colors[l] + own[l].reduce((s, b) => s + values[b], 0);\n          if (mod(sum) !== 0) {\n            valid = false;\n            emit(\n              { valid: false },\n              \"Restricción incumplida\",\n              `L${l + 1} no quedaría roja. Incluimos las luces de un único botón.`,\n              own[l],\n              4,\n            );\n            break;\n          }\n        }\n      if (valid) {\n        const cost = component.reduce((s, u) => s + values[u], 0);\n        emit(\n          { cost, valid: true },\n          \"Intento válido\",\n          `Todas las luces de la componente son rojas con ${cost} pulsaciones.`,\n          component,\n          5,\n        );\n        if (cost < best) {\n          best = cost;\n          bestValues = component.map((u) => values[u]);\n        }\n      }\n    }\n    if (best === Infinity) {\n      emit(\n        { done: true, valid: false },\n        \"Imposible\",\n        \"Ninguno de los tres valores de raíz satisface esta componente.\",\n        component,\n        6,\n      );\n      return { cost: null, presses: null, trace };\n    }\n    component.forEach((u, i) => {\n      answer[u] = bestValues[i];\n      values[u] = bestValues[i];\n    });\n    total += best;\n    if (withTrace)\n      emit(\n        {\n          values: answer.map((v, u) => (visited[u] ? v : null)),\n          cost: total,\n          valid: true,\n        },\n        \"Elegir mínimo de componente\",\n        `Se conserva el menor coste válido: ${best}. Acumulado: ${total}.`,\n        component,\n        5,\n      );\n  }\n  emit(\n    { values: [...answer], cost: total, valid: true, done: true },\n    \"Solución mínima\",\n    `Las componentes son independientes. Coste total mínimo: ${total}.`,\n    [],\n    6,\n  );\n  return { cost: total, presses: answer, trace };\n}\nexport const redPseudocode = [\n  \"validar luces sin botones; construir restricciones\",\n  \"separar componentes conexas\",\n  \"para raíz = 0, 1, 2: iniciar intento\",\n  \"propagar xⱼ = (−c − xᵢ) mod 3\",\n  \"comprobar conflictos y luces de un botón\",\n  \"guardar mínimo válido de la componente\",\n  \"sumar mínimos o devolver impossible\",\n];\n",
+    "declarations": [
+      {
+        "name": "Lights",
+        "start": 2,
+        "end": 2
+      },
+      {
+        "name": "RedState",
+        "start": 3,
+        "end": 10
+      },
+      {
+        "name": "RedResult",
+        "start": 11,
+        "end": 15
+      },
+      {
+        "name": "mod",
+        "start": 16,
+        "end": 16
+      },
+      {
+        "name": "validateLights",
+        "start": 17,
+        "end": 36
+      },
+      {
+        "name": "parseLights",
+        "start": 37,
+        "end": 67
+      },
+      {
+        "name": "owners",
+        "start": 68,
+        "end": 72
+      },
+      {
+        "name": "press",
+        "start": 73,
+        "end": 75
+      },
+      {
+        "name": "solveRed",
+        "start": 76,
+        "end": 306
+      },
+      {
+        "name": "redPseudocode",
+        "start": 307,
+        "end": 315
+      }
+    ]
+  },
+  "extended": {
+    "path": "src/algorithms/extended.ts",
+    "code": "import { event, type TraceEvent } from \"./trace\";\n\n/** A Fenwick tree over 1-based labels. Counts, never probabilities, are stored. */\nexport class Fenwick {\n  tree: number[];\n  constructor(public n: number) {\n    this.tree = Array(n + 1).fill(0);\n  }\n  add(i: number, delta: number) {\n    // lowbit = i & -i: subir a cada intervalo que contiene esta etiqueta.\n    for (; i <= this.n; i += i & -i) this.tree[i] += delta;\n  }\n  sum(i: number) {\n    let s = 0;\n    // Cada salto quita un intervalo disjunto del prefijo [1,i].\n    for (; i > 0; i -= i & -i) s += this.tree[i];\n    return s;\n  }\n}\nexport type QueueState = {\n  active: number[];\n  tree: number[];\n  removed: number[];\n  twice: number;\n  visited: number[];\n};\nexport const queueCode = [\n  \"BIT ← una unidad por etiqueta; doble ← 2n\",\n  \"retirar a[0]; doble += n − a[0]\",\n  \"retirar a[i]; h ← min(a[i−1], a[i])\",\n  \"c ← restantes − BIT.prefijo(h); doble += c\",\n  \"devolver doble / 2\",\n];\nexport function solveQueue(order: number[], trace = false) {\n  const n = order.length;\n  if (\n    !n ||\n    new Set(order).size !== n ||\n    order.some((x) => !Number.isInteger(x) || x < 1 || x > n)\n  )\n    throw Error(\"Escribe una permutación de 1 a n.\");\n  const bit = new Fenwick(n),\n    active = Array.from({ length: n }, (_, i) => i + 1),\n    removed: number[] = [],\n    events: TraceEvent<QueueState>[] = [];\n  active.forEach((x) => bit.add(x, 1));\n  let twice = 2 * n;\n  const state = (visited: number[] = []): QueueState => ({\n    active: [...active],\n    tree: bit.tree.slice(1),\n    removed: [...removed],\n    twice,\n    visited,\n  });\n  for (let i = 0; i < n; i++) {\n    const before = trace ? state() : null,\n      q = order[i];\n    // Retirar ANTES de consultar: quedan exactamente n-i-1 etiquetas.\n    bit.add(q, -1);\n    if (trace) {\n      active.splice(active.indexOf(q), 1);\n      removed.push(q);\n    }\n    const h = i ? Math.min(order[i - 1], q) : q,\n      visited: number[] = [];\n    for (let j = h; j > 0; j -= j & -j) visited.push(j);\n    // Cada elegible aporta 1/2; twice acumula el doble como entero.\n    const count = i ? n - i - 1 - bit.sum(h) : n - q;\n    twice += count;\n    if (before)\n      event(events, before, state(visited), {\n        operation: `Retirar ${q}`,\n        explanation: i\n          ? `Entre ${order[i - 1]} y ${q}, cada etiqueta restante mayor que ${h} aporta 1/2 movimiento esperado: ${count}/2.`\n          : `Los ${n - q} objetos que llegaron después de ${q} lo tapan con probabilidad 1/2. Las n retiradas ya están contadas.`,\n        active: visited,\n        pseudocode: i ? 3 : 1,\n        variables: { umbral: h, elegibles: count, esperanza: twice / 2 },\n        invariant: \"BIT cuenta exactamente las etiquetas aún no retiradas.\",\n        partial: String(twice / 2),\n        source: {\n          file: \"extended\",\n          anchor: \"twice += count;\",\n          scope: \"instruction\",\n        },\n      });\n  }\n  return { answer: twice / 2, events };\n}\n/** Independent physical simulation: bit i selects the initial stack of label i+1. */\nexport function queuePhysical(order: number[], mask: number) {\n  const stacks: number[][] = [[], []];\n  order.forEach((_, i) => stacks[(mask >>> i) & 1].push(i + 1));\n  let cost = 0;\n  for (const q of order) {\n    const s = stacks[0].includes(q) ? 0 : 1;\n    while (stacks[s].at(-1) !== q) {\n      stacks[1 - s].push(stacks[s].pop()!);\n      cost++;\n    }\n    stacks[s].pop();\n    cost++;\n  }\n  return cost;\n}\n\nexport const questions = [\n  [1, 0, 0],\n  [0, 1, 0],\n  [0, 0, 1],\n  [1, 1, 1],\n  [1, 2, 3],\n];\nexport const det = (a: number[][]) =>\n  a[0][0] * (a[1][1] * a[2][2] - a[1][2] * a[2][1]) -\n  a[0][1] * (a[1][0] * a[2][2] - a[1][2] * a[2][0]) +\n  a[0][2] * (a[1][0] * a[2][1] - a[1][1] * a[2][0]);\nexport type LieState = {\n  rows: number[][];\n  candidate: number[];\n  agreements: number[];\n  selected: number[];\n  accepted: boolean;\n};\nexport const lieCode = [\n  \"hacer las cinco consultas fijas\",\n  \"enumerar las diez ternas de respuestas\",\n  \"resolver con determinantes enteros\",\n  \"descartar fracciones o cantidades negativas\",\n  \"aceptar si coincide con al menos cuatro respuestas\",\n];\nexport function solveLiar(replies: number[], trace = false) {\n  if (\n    replies.length !== 5 ||\n    replies.some((x) => !Number.isSafeInteger(x) || x < 0 || x > 100000)\n  )\n    throw Error(\"Se necesitan cinco respuestas enteras entre 0 y 100000.\");\n  const events: TraceEvent<LieState>[] = [];\n  let state: LieState = {\n    rows: questions.map((q, i) => [...q, replies[i]]),\n    candidate: [],\n    agreements: [],\n    selected: [],\n    accepted: false,\n  };\n  let answer: number[] | null = null;\n  // i<j<k enumera 10 ternas. Al menos una evita la única mentira.\n  triples: for (let i = 0; i < 3; i++)\n    for (let j = i + 1; j < 4; j++)\n      for (let k = j + 1; k < 5; k++) {\n        const ids = [i, j, k],\n          a = ids.map((x) => questions[x]),\n          d = det(a),\n          nums = [0, 1, 2].map((c) =>\n            det(\n              a.map((r, t) =>\n                r.map((v, col) => (col === c ? replies[ids[t]] : v)),\n              ),\n            ),\n          );\n        // Cramer: numeradores divisibles por d, sin tolerancias numéricas.\n        const candidate = nums.map((x) => x / d || 0),\n          integral =\n            nums.every((x) => x % d === 0) && candidate.every((x) => x >= 0);\n        const agreements = integral\n          ? questions.flatMap((r, t) =>\n              r.reduce((s, v, c) => s + v * candidate[c], 0) === replies[t]\n                ? [t]\n                : [],\n            )\n          : [];\n        const next = {\n          ...state,\n          candidate,\n          agreements,\n          selected: ids,\n          accepted: agreements.length >= 4,\n        };\n        if (trace)\n          event(events, state, next, {\n            operation: `Probar consultas ${ids.map((x) => x + 1).join(\", \")}`,\n            explanation: !integral\n              ? \"La solución no representa tres cantidades enteras no negativas.\"\n              : `Candidato (${candidate.join(\", \")}): satisface ${agreements.length} de 5 respuestas. ${next.accepted ? \"Supera la comprobación.\" : \"Se descarta.\"}`,\n            active: ids,\n            pseudocode: next.accepted ? 4 : integral ? 4 : 3,\n            variables: { determinante: d, coincidencias: agreements.length },\n            invariant:\n              \"La terna verdadera concuerda con al menos cuatro respuestas.\",\n            partial: next.accepted ? candidate.join(\", \") : \"sin aceptar\",\n            source: {\n              file: \"extended\",\n              anchor: \"const agreements = integral\",\n              scope: \"block\",\n            },\n          });\n        state = next;\n        if (next.accepted) {\n          answer = candidate;\n          break triples;\n        }\n      }\n  // Multiple valid triples may be visited; uniqueness follows from any three rows being independent.\n  return { answer, events };\n}\n\nexport type BridgeCell = { n: number; e: number; value: number; i: number };\n/** Backhouse–Truong capacity-C recurrence (section 4.5). Values are prepaid bag costs. */\nexport function solveBridge(times: number[], capacity: number, trace = false) {\n  if (\n    times.length < 2 ||\n    !Number.isInteger(capacity) ||\n    capacity < 2 ||\n    times.some((t) => !Number.isFinite(t) || t <= 0)\n  )\n    throw Error(\"Al menos dos tiempos positivos y capacidad ≥2.\");\n  const t = [0, ...times.toSorted((a, b) => a - b)],\n    N = times.length,\n    C = Math.min(capacity, N),\n    prefix = [0];\n  for (let i = 1; i <= N; i++) prefix[i] = prefix[i - 1] + t[i];\n  const dp: number[][] = Array.from({ length: N + 1 }, () => []),\n    cells: BridgeCell[] = [];\n  for (let n = 2; n <= N; n++)\n    for (let e = 0; e <= Math.floor((N - n) / C); e++) {\n      if (n <= C && e === 0) {\n        dp[n][e] = t[n];\n        if (trace) cells.push({ n, e, value: t[n], i: -1 });\n        continue;\n      }\n      let best = Infinity,\n        choice = -1;\n      const lo = n <= C ? 2 : Math.max(0, C + 2 - n),\n        hi = n <= C ? Math.min(n, e + 1) : Math.min(C - 1, e + 1);\n      // El orden (n,e) garantiza que dp[nextN][e+1-i] ya esté calculado.\n      for (let i = lo; i <= hi; i++) {\n        const nextN = n <= C ? i : n - C + i,\n          candidate = t[n] + prefix[i] + dp[nextN][e + 1 - i];\n        if (candidate < best) {\n          best = candidate;\n          choice = i;\n        }\n      }\n      dp[n][e] = best;\n      if (trace) cells.push({ n, e, value: best, i: choice });\n    }\n  return { answer: dp[N][0], dp, cells, times: t.slice(1) };\n}\n\nexport function ternaryVectors(k: number) {\n  return Array.from({ length: 3 ** k }, (_, s) =>\n    Array.from({ length: k }, () => {\n      const d = s % 3;\n      s = Math.floor(s / 3);\n      return d;\n    }),\n  );\n}\nexport function encode(v: number[]) {\n  return v.reduceRight((s, d) => s * 3 + d, 0);\n}\nexport function vectorAdd(a: number[], b: number[], sign = 1) {\n  return a.map((x, i) => (x + sign * b[i] + 3) % 3);\n}\nexport function leverDistribution(levers: number[][], k: number) {\n  const vectors = ternaryVectors(k),\n    m = vectors.length;\n  let counts = Array(m).fill(0);\n  counts[0] = 1;\n  const layers = [counts];\n  for (const u of levers) {\n    // No usar u conserva counts; usarla una vez desplaza la capa anterior.\n    const next = [...counts];\n    vectors.forEach((v, s) => (next[encode(vectorAdd(v, u))] += counts[s]));\n    counts = next;\n    layers.push(counts);\n  }\n  return { counts, layers };\n}\n/** Exact integer counts stay <= 2^40, below Number's 2^53 limit. No 32-bit count operations. */\nexport function solveLevers(counts: number[], k: number) {\n  if (\n    !Number.isInteger(k) ||\n    k < 1 ||\n    k > 5 ||\n    counts.length !== 3 ** k ||\n    counts.some((x) => !Number.isSafeInteger(x) || x < 0)\n  )\n    throw Error(\"Distribución inválida.\");\n  const total = counts.reduce((a, b) => a + b, 0),\n    n = Math.log2(total);\n  if (!Number.isInteger(n) || n > 40)\n    throw Error(\"La suma debe ser 2^n, n ≤40.\");\n  const vectors = ternaryVectors(k),\n    dot = (a: number[], b: number[]) =>\n      a.reduce((s, x, i) => s + x * b[i], 0) % 3;\n  const projections = vectors.map((x) => {\n    const row = [0, 0, 0];\n    vectors.forEach((s, i) => (row[dot(x, s)] += counts[i]));\n    let f = Infinity;\n    for (let v of row)\n      if (v) {\n        let z = 0;\n        while (v % 2 === 0) {\n          v /= 2;\n          z++;\n        }\n        f = Math.min(f, z);\n      }\n    return { x, row, f };\n  });\n  // Inversión por incidencia: recuperar cuántas palancas están en el subespacio.\n  const mass = (generators: number[][]) => {\n    const h = projections.filter((p) =>\n      generators.every((g) => dot(p.x, g) === 0),\n    );\n    return ((3 * h.reduce((s, p) => s + p.f, 0)) / h.length - n) / 2;\n  };\n  const zeros = mass([]),\n    levers: number[][] = [],\n    lines: { u: number[]; count: number }[] = [];\n  if (!Number.isInteger(zeros) || zeros < 0)\n    throw Error(\"Conteos incompatibles.\");\n  for (let i = 0; i < zeros; i++) levers.push(Array(k).fill(0));\n  for (let s = 1; s < vectors.length; s++) {\n    const u = vectors[s],\n      neg = encode(u.map((x) => (3 - x) % 3));\n    if (s > neg) continue;\n    const count = mass([u]) - zeros;\n    if (!Number.isInteger(count) || count < 0)\n      throw Error(\"Conteos incompatibles.\");\n    lines.push({ u, count });\n    for (let j = 0; j < count; j++) levers.push(u);\n  }\n  if (levers.length !== n) throw Error(\"Conteos incompatibles.\");\n  const { counts: initial, layers } = leverDistribution(levers, k);\n  // Negar un subconjunto traslada la distribución: objetivo[s] = inicial[s+shift].\n  const shift = vectors.findIndex(\n    (v, i) =>\n      initial[i] > 0 &&\n      vectors.every((s, j) => counts[j] === initial[encode(vectorAdd(s, v))]),\n  );\n  if (shift < 0) throw Error(\"No existe una orientación consistente.\");\n  let v = vectors[shift];\n  const flipped: number[] = [];\n  const answer = levers.map((u) => [...u]);\n  for (let i = n; i > 0; i--)\n    if (!layers[i - 1][encode(v)]) {\n      flipped.push(i - 1);\n      v = vectorAdd(v, levers[i - 1], -1);\n      answer[i - 1] = levers[i - 1].map((x) => (3 - x) % 3);\n    }\n  return {\n    answer,\n    projections,\n    zeros,\n    lines,\n    layers,\n    shift: vectors[shift],\n    flipped,\n  };\n}\n",
+    "declarations": [
+      {
+        "name": "Fenwick",
+        "start": 4,
+        "end": 19
+      },
+      {
+        "name": "QueueState",
+        "start": 20,
+        "end": 26
+      },
+      {
+        "name": "queueCode",
+        "start": 27,
+        "end": 33
+      },
+      {
+        "name": "solveQueue",
+        "start": 34,
+        "end": 89
+      },
+      {
+        "name": "queuePhysical",
+        "start": 91,
+        "end": 105
+      },
+      {
+        "name": "questions",
+        "start": 107,
+        "end": 113
+      },
+      {
+        "name": "det",
+        "start": 114,
+        "end": 117
+      },
+      {
+        "name": "LieState",
+        "start": 118,
+        "end": 124
+      },
+      {
+        "name": "lieCode",
+        "start": 125,
+        "end": 131
+      },
+      {
+        "name": "solveLiar",
+        "start": 132,
+        "end": 205
+      },
+      {
+        "name": "BridgeCell",
+        "start": 207,
+        "end": 207
+      },
+      {
+        "name": "solveBridge",
+        "start": 209,
+        "end": 248
+      },
+      {
+        "name": "ternaryVectors",
+        "start": 250,
+        "end": 258
+      },
+      {
+        "name": "encode",
+        "start": 259,
+        "end": 261
+      },
+      {
+        "name": "vectorAdd",
+        "start": 262,
+        "end": 264
+      },
+      {
+        "name": "leverDistribution",
+        "start": 265,
+        "end": 279
+      },
+      {
+        "name": "solveLevers",
+        "start": 281,
+        "end": 362
+      }
+    ]
+  },
+  "trains": {
+    "path": "src/algorithms/trains.ts",
+    "code": "import { event, type TraceEvent } from \"./trace\";\nexport type TrackState = {\n  cells: { x: number; y: number; d: number; piece: string }[];\n  x: number;\n  y: number;\n  d: number;\n  used: string;\n};\nexport function checkTrack(track: string, trace = false) {\n  const events: TraceEvent<TrackState>[] = [],\n    seen = new Set<string>();\n  let state: TrackState = { cells: [], x: 0, y: 0, d: 0, used: \"\" },\n    valid = true;\n  for (const piece of track) {\n    const { x, y, d } = state,\n      key = `${x},${y}`;\n    if (seen.has(key) || !\"SLR\".includes(piece)) valid = false;\n    seen.add(key);\n    const nextD = (d + (piece === \"L\" ? 3 : piece === \"R\" ? 1 : 0)) % 4;\n    const cells = trace ? [...state.cells] : state.cells;\n    cells.push({ x, y, d, piece });\n    const next: TrackState = {\n      cells,\n      x: x + [1, 0, -1, 0][nextD],\n      y: y + [0, 1, 0, -1][nextD],\n      d: nextD,\n      used: trace ? state.used + piece : \"\",\n    };\n    if (trace)\n      event(events, state, next, {\n        operation: `Colocar ${piece}`,\n        explanation: `Celda (${x}, ${y}). Orientación ${[\"este\", \"sur\", \"oeste\", \"norte\"][d]} → ${[\"este\", \"sur\", \"oeste\", \"norte\"][nextD]}. ${seen.size === next.cells.length ? \"La celda estaba libre.\" : \"Hay una celda repetida.\"}`,\n        active: [state.cells.length],\n        pseudocode: 3,\n        variables: {\n          x: next.x,\n          y: next.y,\n          dirección: nextD,\n          piezas: next.used.length,\n        },\n        invariant:\n          \"Cada pieza ocupa una celda distinta; el extremo avanza a la celda vecina.\",\n        partial: next.used,\n        source: {\n          file: \"trains\",\n          anchor:\n            'const nextD = (d + (piece === \"L\" ? 3 : piece === \"R\" ? 1 : 0)) % 4;',\n          scope: \"block\",\n        },\n      });\n    state = next;\n  }\n  return {\n    valid:\n      valid &&\n      track.length >= 4 &&\n      state.x === 0 &&\n      state.y === 0 &&\n      state.d === 0,\n    state,\n    events,\n  };\n}\nexport const trainCode = [\n  \"s ← mayor par ≤ inventario de rectas\",\n  \"elegir cantidad máxima de curvas y base según s y c mod 4\",\n  \"insertar ampliaciones en las dos separaciones indicadas\",\n  \"emitir cada pieza; comprobar celda, posición y orientación\",\n];\nexport function solveTrain(s: number, c: number) {\n  if (\n    !Number.isInteger(s) ||\n    !Number.isInteger(c) ||\n    s < 0 ||\n    c < 4 ||\n    s > 100000 ||\n    c > 100000\n  )\n    throw Error(\"0 ≤ s ≤ 100000 y 4 ≤ c ≤ 100000.\");\n  // Las cotas de cierre permiten usar solo cantidades pares.\n  s -= s % 2;\n  c -= c % 2;\n  if (!s) {\n    c -= c % 4;\n    // Excepción demostrada en la lección: sin rectas, ocho curvas no sirven.\n    if (c === 8) c = 4;\n  }\n  let track: string,\n    base: string,\n    k = 0,\n    t = 0,\n    gaps: number[];\n  if (c === 4) {\n    base = \"LLLL\";\n    gaps = [0, 2];\n    t = s / 2;\n    track = [...base]\n      .map((p, i) => (gaps.includes(i) ? \"S\".repeat(t) : \"\") + p)\n      .join(\"\");\n  } else {\n    base = !s ? \"LRRLRRLRRLRR\" : c % 4 === 0 ? \"LSLLSL\" : \"LSLSLLRL\";\n    gaps = !s ? [0, 6] : [0, 3];\n    // Dos huecos reciben dos curvas cada uno por ampliación: cuatro en total.\n    k = (c - [...base].filter((x) => x !== \"S\").length) / 4;\n    t = !s ? 0 : (s - 2) / 2;\n    const word = !s ? \"LR\" : \"RL\";\n    track = [...base]\n      .map(\n        (p, i) => (gaps.includes(i) ? word.repeat(k) + \"S\".repeat(t) : \"\") + p,\n      )\n      .join(\"\");\n  }\n  return { track, s, c, base, k, t, gaps };\n}\n",
+    "declarations": [
+      {
+        "name": "TrackState",
+        "start": 2,
+        "end": 8
+      },
+      {
+        "name": "checkTrack",
+        "start": 9,
+        "end": 63
+      },
+      {
+        "name": "trainCode",
+        "start": 64,
+        "end": 69
+      },
+      {
+        "name": "solveTrain",
+        "start": 70,
+        "end": 114
+      }
+    ]
+  },
+  "rotations": {
+    "path": "src/algorithms/rotations.ts",
+    "code": "/** Iterative lowlink / biconnected edge blocks: safe for deep 400000-vertex inputs. */\nexport function rotationClass(\n  n: number,\n  edges: number[][],\n  start: number[],\n  target: number[],\n) {\n  const adj: { v: number; e: number }[][] = Array.from({ length: n }, () => []);\n  edges.forEach(([a, b], e) => {\n    adj[a].push({ v: b, e });\n    adj[b].push({ v: a, e });\n  });\n  const tin = Array(n).fill(-1),\n    low = Array(n).fill(0),\n    parent = Array(n).fill(-1),\n    pe = Array(n).fill(-1),\n    cursor = Array(n).fill(0),\n    bridges = new Set<number>(),\n    blocks: number[][] = [],\n    edgeStack: number[] = [];\n  let clock = 0;\n  for (let root = 0; root < n; root++)\n    if (tin[root] < 0) {\n      const stack = [root];\n      tin[root] = low[root] = clock++;\n      while (stack.length) {\n        const u = stack.at(-1)!;\n        if (cursor[u] < adj[u].length) {\n          const { v, e } = adj[u][cursor[u]++];\n          if (e === pe[u]) continue;\n          if (tin[v] < 0) {\n            parent[v] = u;\n            pe[v] = e;\n            edgeStack.push(e);\n            tin[v] = low[v] = clock++;\n            stack.push(v);\n          } else if (tin[v] < tin[u]) {\n            low[u] = Math.min(low[u], tin[v]);\n            edgeStack.push(e);\n          }\n        } else {\n          stack.pop();\n          const p = parent[u];\n          if (p >= 0) {\n            low[p] = Math.min(low[p], low[u]);\n            // Estricto: no hay retorno al padre ni a un ancestro suyo.\n            if (low[u] > tin[p]) bridges.add(pe[u]);\n            // No estricto: termina un bloque biconexo, aunque no sea un puente.\n            if (low[u] >= tin[p]) {\n              const b: number[] = [];\n              let e: number;\n              do {\n                e = edgeStack.pop()!;\n                b.push(e);\n              } while (e !== pe[u]);\n              blocks.push(b);\n            }\n          }\n        }\n      }\n    }\n  const comp = Array(n).fill(-1),\n    parts: number[][] = [];\n  for (let u = 0; u < n; u++)\n    if (comp[u] < 0) {\n      const nodes = [u],\n        id = parts.length;\n      comp[u] = id;\n      for (let i = 0; i < nodes.length; i++)\n        for (const { v, e } of adj[nodes[i]])\n          if (!bridges.has(e) && comp[v] < 0) {\n            comp[v] = id;\n            nodes.push(v);\n          }\n      parts.push(nodes);\n    }\n  const full = Array(parts.length).fill(false),\n    blockCount = Array(parts.length).fill(0);\n  for (const block of blocks)\n    if (block.length > 1) {\n      const vertices = new Set(block.flatMap((e) => edges[e])),\n        id = comp[edges[block[0]][0]];\n      blockCount[id]++;\n      if (block.length !== vertices.size || block.length % 2 === 0)\n        full[id] = true;\n    }\n  const results = parts.map((nodes, id) => {\n    const a = nodes.map((v) => start[v]),\n      b = nodes.map((v) => target[v]);\n    const sorted = a.toSorted((x, y) => x - y),\n      same = sorted.join(\",\") === b.toSorted((x, y) => x - y).join(\",\");\n    if (nodes.length === 1) return { nodes, kind: \"fijo\", possible: same };\n    if (\n      blockCount[id] === 1 &&\n      nodes.every((u) => adj[u].filter((x) => !bridges.has(x.e)).length === 2)\n    ) {\n      const order = [nodes[0]];\n      let prev = -1,\n        u = nodes[0];\n      do {\n        const v = adj[u].find((x) => !bridges.has(x.e) && x.v !== prev)!.v;\n        prev = u;\n        u = v;\n        if (u !== order[0]) order.push(u);\n      } while (u !== order[0]);\n      const pattern = order.map((v) => target[v]),\n        text = order.map((v) => start[v]),\n        pi = Array(pattern.length).fill(0);\n      // KMP: pi permite reutilizar el prefijo ya comparado tras un fallo.\n      for (let i = 1, j = 0; i < pattern.length; i++) {\n        while (j && pattern[i] !== pattern[j]) j = pi[j - 1];\n        if (pattern[i] === pattern[j]) j++;\n        pi[i] = j;\n      }\n      let found = false;\n      for (let i = 0, j = 0; i < 2 * text.length - 1; i++) {\n        while (j && text[i % text.length] !== pattern[j]) j = pi[j - 1];\n        if (text[i % text.length] === pattern[j]) j++;\n        if (j === pattern.length) {\n          found = true;\n          break;\n        }\n      }\n      return { nodes, kind: \"rotaciones\", possible: found };\n    }\n    if (full[id])\n      return { nodes, kind: \"cualquier permutación\", possible: same };\n    // Intercambiar dos copias iguales cambia paridad sin cambiar lo observable.\n    const duplicate = sorted.some((v, i) => i > 0 && v === sorted[i - 1]);\n    if (!same || duplicate)\n      return {\n        nodes,\n        kind: \"paridad (duplicados indistinguibles)\",\n        possible: same,\n      };\n    const where = new Map(a.map((v, i) => [v, i])),\n      p = b.map((v) => where.get(v)!),\n      seen = new Set<number>();\n    let cycles = 0;\n    for (let i = 0; i < p.length; i++)\n      if (!seen.has(i)) {\n        cycles++;\n        let j = i;\n        while (!seen.has(j)) {\n          seen.add(j);\n          j = p[j];\n        }\n      }\n    return {\n      nodes,\n      kind: \"solo permutaciones pares\",\n      possible: (nodes.length - cycles) % 2 === 0,\n    };\n  });\n  return {\n    possible: results.every((r) => r.possible),\n    results,\n    bridges: [...bridges],\n    blocks,\n  };\n}\n",
+    "declarations": [
+      {
+        "name": "rotationClass",
+        "start": 2,
+        "end": 161
+      }
+    ]
+  },
+  "quartets": {
+    "path": "src/algorithms/quartets.ts",
+    "code": "export type Action =\n  | { kind: \"ask\"; player: number; from: number; card: number; yes: boolean }\n  | { kind: \"quartet\"; player: number; suit: number };\nexport type Deck = {\n  players: number;\n  suits: number;\n  perSuit: number;\n  hand: number;\n};\nexport const standardDeck: Deck = { players: 4, suits: 8, perSuit: 4, hand: 8 };\nexport type Obligation = { player: number; suit: number; candidates: number[] };\nexport type MatchingState = {\n  domains: number[][];\n  owners: number[];\n  fixed: number[];\n  obligations: Obligation[];\n  slots: { player: number; suit: number; candidates: number[] }[];\n  matching: number[];\n  possible: boolean;\n  reason: string;\n};\n/** All domains refer to INITIAL ownership. owners tracks current ownership after first disclosure. */\nexport function checkQuartets(\n  actions: Action[],\n  deck = standardDeck,\n  trace = true,\n) {\n  const { players, suits, perSuit, hand } = deck,\n    C = suits * perSuit;\n  if (players * hand !== C) throw Error(\"Mazo y manos incompatibles.\");\n  const domains = Array.from({ length: C }, () =>\n      Array.from({ length: players }, (_, i) => i),\n    ),\n    owners = Array(C).fill(-1),\n    fixed = Array(C).fill(-1);\n  let obligations: Obligation[] = [],\n    failure = \"\",\n    firstFailure: number | null = null;\n  const history: MatchingState[] = [];\n  const reveal = (card: number, p: number) => {\n    if (fixed[card] >= 0) {\n      if (owners[card] !== p) failure = \"La carta ya tiene otro dueño actual.\";\n      return;\n    }\n    if (!domains[card].includes(p))\n      failure = \"Una respuesta anterior excluía este dueño inicial.\";\n    fixed[card] = p;\n    owners[card] = p;\n    domains[card] = [p];\n    obligations = obligations\n      .filter((o) => !(o.player === p && o.candidates.includes(card)))\n      .map((o) => ({\n        ...o,\n        candidates: o.candidates.filter((c) => c !== card),\n      }));\n  };\n  const match = () => {\n    const slots: MatchingState[\"slots\"] = [],\n      unknown = Array.from({ length: C }, (_, i) => i).filter(\n        (c) => fixed[c] < 0,\n      );\n    for (let p = 0; p < players; p++) {\n      const free = hand - fixed.filter((x) => x === p).length,\n        required = obligations.filter((o) => o.player === p);\n      if (free < required.length)\n        failure = \"Más obligaciones que huecos iniciales disponibles.\";\n      for (const o of required)\n        slots.push({\n          player: p,\n          suit: o.suit,\n          candidates: o.candidates.filter(\n            (c) => fixed[c] < 0 && domains[c].includes(p),\n          ),\n        });\n      for (let i = required.length; i < free; i++)\n        slots.push({\n          player: p,\n          suit: -1,\n          candidates: unknown.filter((c) => domains[c].includes(p)),\n        });\n    }\n    const occupied = Array(C).fill(-1),\n      matching = Array(slots.length).fill(-1);\n    // Recolocar al dueño del hueco ocupado evita el error de un greedy irrevocable.\n    const augment = (s: number, seen: Set<number>): boolean => {\n      for (const c of slots[s].candidates)\n        if (!seen.has(c)) {\n          seen.add(c);\n          if (occupied[c] < 0 || augment(occupied[c], seen)) {\n            occupied[c] = s;\n            matching[s] = c;\n            return true;\n          }\n        }\n      return false;\n    };\n    let matched = 0;\n    for (let s = 0; s < slots.length; s++) if (augment(s, new Set())) matched++;\n    const possible =\n      !failure && matched === unknown.length && slots.length === unknown.length;\n    if (!possible && !failure)\n      failure =\n        \"No hay matching que complete simultáneamente las manos iniciales.\";\n    if (trace)\n      history.push(\n        JSON.parse(\n          JSON.stringify({\n            domains,\n            owners,\n            fixed,\n            obligations,\n            slots,\n            matching,\n            possible,\n            reason:\n              failure ||\n              \"Existe una distribución inicial compatible con todo el prefijo.\",\n          }),\n        ),\n      );\n    return possible;\n  };\n  for (let i = 0; i < actions.length; i++) {\n    const a = actions[i],\n      p = a.player;\n    if (a.kind === \"ask\") {\n      const s = Math.floor(a.card / perSuit),\n        cards = Array.from({ length: perSuit }, (_, j) => s * perSuit + j);\n      // Asking for one's own card is expressly allowed by the statement.\n      if (!cards.some((c) => owners[c] === p)) {\n        const candidates = cards.filter(\n            (c) => fixed[c] < 0 && domains[c].includes(p),\n          ),\n          old = obligations.find((o) => o.player === p && o.suit === s);\n        if (old)\n          old.candidates = old.candidates.filter((c) => candidates.includes(c));\n        else obligations.push({ player: p, suit: s, candidates });\n      }\n      if (a.yes) {\n        reveal(a.card, a.from);\n        // Una transferencia cambia el dueño actual, nunca el reparto inicial.\n        owners[a.card] = p;\n      } else if (fixed[a.card] >= 0) {\n        if (owners[a.card] === a.from)\n          failure = \"Se niega una carta que sabemos que posee.\";\n      } else domains[a.card] = domains[a.card].filter((x) => x !== a.from);\n    } else {\n      for (let j = 0; j < perSuit; j++) {\n        const c = a.suit * perSuit + j;\n        reveal(c, p);\n        owners[c] = -2;\n      }\n    }\n    if (!match()) {\n      firstFailure = i + 1;\n      break;\n    }\n  }\n  return { possible: firstFailure === null, firstFailure, history };\n}\n",
+    "declarations": [
+      {
+        "name": "Action",
+        "start": 1,
+        "end": 3
+      },
+      {
+        "name": "Deck",
+        "start": 4,
+        "end": 9
+      },
+      {
+        "name": "standardDeck",
+        "start": 10,
+        "end": 10
+      },
+      {
+        "name": "Obligation",
+        "start": 11,
+        "end": 11
+      },
+      {
+        "name": "MatchingState",
+        "start": 12,
+        "end": 21
+      },
+      {
+        "name": "checkQuartets",
+        "start": 23,
+        "end": 160
+      }
+    ]
+  },
+  "geometry": {
+    "path": "src/algorithms/geometry.ts",
+    "code": "export type Point = [number, number];\nexport type Pyramid = [number, number, number, number, number];\nfunction pyramid(p: Pyramid) {\n  const [x, y, u, v, h] = p,\n    dx = u - x,\n    dy = v - y;\n  return {\n    base: [\n      [x, y],\n      [u, v],\n      [u - dy, v + dx],\n      [x - dy, y + dx],\n    ] as Point[],\n    apex: [(x + u - dy) / 2, (y + v + dx) / 2, h],\n  };\n}\nconst interpolate = (a: Point, b: Point, t: number): Point => [\n  a[0] + t * (b[0] - a[0]),\n  a[1] + t * (b[1] - a[1]),\n];\nfunction minimize(f: (x: number) => number, iterations: number) {\n  let lo = 0,\n    hi = 1;\n  for (let i = 0; i < iterations; i++) {\n    const a = lo + (hi - lo) / 3,\n      b = hi - (hi - lo) / 3;\n    // Por convexidad basta conservar dos tercios; comparar no exige derivadas.\n    if (f(a) <= f(b)) hi = b;\n    else lo = a;\n  }\n  // Los extremos también pueden ser óptimos (esquinas o bases en contacto).\n  const candidates = [0, 1, (lo + hi) / 2];\n  let x = candidates[0],\n    value = f(x);\n  for (const c of candidates) {\n    const v = f(c);\n    if (v < value) {\n      x = c;\n      value = v;\n    }\n  }\n  return { x, value };\n}\n/** Convex minimization on closed base segments. Includes endpoints and touching bases. */\nexport function solvePyramids(\n  first: Pyramid,\n  second: Pyramid,\n  iterations = 90,\n) {\n  const a = pyramid(first),\n    b = pyramid(second),\n    candidates: {\n      i: number;\n      j: number;\n      t: number;\n      u: number;\n      distance: number;\n      p: Point;\n      q: Point;\n    }[] = [];\n  for (let i = 0; i < 4; i++)\n    for (let j = 0; j < 4; j++) {\n      const point = (t: number) =>\n          interpolate(a.base[i], a.base[(i + 1) % 4], t),\n        other = (u: number) => interpolate(b.base[j], b.base[(j + 1) % 4], u);\n      const f = (t: number, u: number) => {\n        const p = point(t),\n          q = other(u);\n        return (\n          Math.hypot(p[0] - a.apex[0], p[1] - a.apex[1], a.apex[2]) +\n          Math.hypot(p[0] - q[0], p[1] - q[1]) +\n          Math.hypot(q[0] - b.apex[0], q[1] - b.apex[1], b.apex[2])\n        );\n      };\n      const outer = minimize(\n          (t) => minimize((u) => f(t, u), iterations).value,\n          iterations,\n        ),\n        inner = minimize((u) => f(outer.x, u), iterations);\n      candidates.push({\n        i,\n        j,\n        t: outer.x,\n        u: inner.x,\n        distance: inner.value,\n        p: point(outer.x),\n        q: other(inner.x),\n      });\n    }\n  candidates.sort((x, y) => x.distance - y.distance);\n  return { answer: candidates[0].distance, best: candidates[0], candidates };\n}\nconst lower = (a: number[], x: number, upper = false) => {\n  let l = 0,\n    r = a.length;\n  while (l < r) {\n    const m = Math.floor((l + r) / 2);\n    if (a[m] < x || (upper && a[m] === x)) l = m + 1;\n    else r = m;\n  }\n  return l;\n};\nexport function dicePoints(d1: number[], d2: number[]) {\n  let a = d1.toSorted((x, y) => x - y),\n    b = d2.toSorted((x, y) => x - y);\n  // Menores cuentan dos veces; iguales una: victoria=1 y empate=1/2.\n  const score = (v: number, d: number[]) =>\n    (lower(d, v) + lower(d, v, true)) / (2 * d.length);\n  if (a.reduce((s, v) => s + score(v, b), 0) / a.length < 0.5) [a, b] = [b, a];\n  const values = [\n    ...new Set([1, ...a, ...b, ...a.map((x) => x + 1), ...b.map((x) => x + 1)]),\n  ].sort((x, y) => x - y);\n  return values.map((v) => ({ v, x: score(v, a), y: score(v, b) }));\n}\nexport function solveDice(d1: number[], d2: number[]) {\n  const points = dicePoints(d1, d2),\n    unique = points.filter(\n      (p, i) => !i || p.x !== points[i - 1].x || p.y !== points[i - 1].y,\n    ),\n    cross = (\n      a: (typeof points)[0],\n      b: (typeof points)[0],\n      c: (typeof points)[0],\n    ) => (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);\n  const half = (arr: typeof points) => {\n    const h: typeof points = [];\n    for (const p of arr) {\n      // Cada punto se apila y desapila a lo sumo una vez: envolvente lineal.\n      while (h.length > 1 && cross(h.at(-2)!, h.at(-1)!, p) <= 0) h.pop();\n      h.push(p);\n    }\n    return h;\n  };\n  const bottom = half(unique),\n    top = half(unique.toReversed()),\n    hull = [...bottom.slice(0, -1), ...top.slice(0, -1)];\n  if (!hull.length) hull.push(unique[0]);\n  let minimum = Infinity,\n    maximum = -Infinity;\n  const consider = (x: number, y: number) => {\n    if (x >= 0.5 - 1e-12) minimum = Math.min(minimum, y);\n    if (y <= 0.5 + 1e-12) maximum = Math.max(maximum, x);\n  };\n  for (let i = 0; i < hull.length; i++) {\n    const p = hull[i],\n      q = hull[(i + 1) % hull.length];\n    consider(p.x, p.y);\n    if (p.x !== q.x) {\n      const t = (0.5 - p.x) / (q.x - p.x);\n      if (t >= 0 && t <= 1) consider(0.5, p.y + t * (q.y - p.y));\n    }\n    if (p.y !== q.y) {\n      const t = (0.5 - p.y) / (q.y - p.y);\n      if (t >= 0 && t <= 1) consider(p.x + t * (q.x - p.x), 0.5);\n    }\n  }\n  return { minimum, maximum, points, hull };\n}\n",
+    "declarations": [
+      {
+        "name": "Point",
+        "start": 1,
+        "end": 1
+      },
+      {
+        "name": "Pyramid",
+        "start": 2,
+        "end": 2
+      },
+      {
+        "name": "pyramid",
+        "start": 3,
+        "end": 16
+      },
+      {
+        "name": "interpolate",
+        "start": 17,
+        "end": 20
+      },
+      {
+        "name": "minimize",
+        "start": 21,
+        "end": 43
+      },
+      {
+        "name": "solvePyramids",
+        "start": 45,
+        "end": 92
+      },
+      {
+        "name": "lower",
+        "start": 93,
+        "end": 102
+      },
+      {
+        "name": "dicePoints",
+        "start": 103,
+        "end": 114
+      },
+      {
+        "name": "solveDice",
+        "start": 115,
+        "end": 158
+      }
+    ]
+  },
+  "trace": {
+    "path": "src/algorithms/trace.ts",
+    "code": "/** Events are immutable JSON-serializable snapshots, not animation instructions. */\nexport type TraceEvent<S> = {\n  id: number;\n  before: S;\n  after: S;\n  operation: string;\n  explanation: string;\n  active: number[];\n  pseudocode: number;\n  variables: Record<string, string | number>;\n  invariant: string;\n  partial: string;\n  /** Exact repository instruction that produced this snapshot, or a completed block. */\n  source?: { file: string; anchor: string; scope: \"instruction\" | \"block\" };\n};\nexport function event<S>(\n  events: TraceEvent<S>[],\n  before: S,\n  after: S,\n  info: Omit<TraceEvent<S>, \"id\" | \"before\" | \"after\">,\n) {\n  events.push({\n    id: events.length,\n    before: JSON.parse(JSON.stringify(before)),\n    after: JSON.parse(JSON.stringify(after)),\n    ...info,\n  });\n}\n",
+    "declarations": [
+      {
+        "name": "TraceEvent",
+        "start": 2,
+        "end": 15
+      },
+      {
+        "name": "event",
+        "start": 16,
+        "end": 28
+      }
+    ]
+  }
+}

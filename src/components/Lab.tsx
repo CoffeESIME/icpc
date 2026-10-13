@@ -1046,7 +1046,7 @@ function Lesson({
             <li key={v}>{v}</li>
           ))}
         </ul>
-        <DeepLesson id={p.id} />
+        <DeepLesson id={p.id} answers={progress.answers} onChange={(answers) => update({ answers })} />
         <h3>Casos que pueden romper una idea</h3>
         <ul>
           {p.edges.map((e) => (

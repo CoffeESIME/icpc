@@ -60,6 +60,16 @@ S **no se declara cerrado por completo**. Sus pendientes son visibles en Constru
 
 ## Estructura
 
+### De la idea al código
+
+En **Construir**, los once problemas tienen vistas de **Pseudocódigo**, **Código completo**, **Completar código** y **Ejecución**. Las soluciones empiezan ocultas y pueden revelarse al terminar un intento, aunque esté incompleto. Los intentos se guardan con el progreso local. Cada explicación enlaza instrucciones reales y detalla los factores de complejidad.
+
+La referencia TypeScript se consulta dentro de la aplicación, con tipos, auxiliares e importaciones, y puede descargarse. `npm run code:catalog` genera `src/data/code-catalog.json` y las copias de `public/reference/` desde los archivos reales; también se ejecuta antes de desarrollo, build y pruebas. No edites las copias generadas. El contenido pedagógico está en `src/data/implementation-lessons.ts`.
+
+Compression tiene una traza observada del solucionador directo O(n), separada del laboratorio constructivo XX → X. P/Q/W/U y los estados calculados de S/X/Z señalan instrucciones o bloques de código. R/T/V explican el alcance de sus recorridos y no fingen una ejecución interna. Los ejercicios comparan expresiones normalizadas, **no ejecutan código del estudiante**; admiten pistas y revelación de la referencia.
+
+Los ejemplos invocan funciones sobre datos ya leídos. Las descargas son módulos TypeScript, no programas de consola para enviar directamente al juez. En W, el transporte interactivo queda fuera del decodificador local. S conserva su estado parcialmente verificado y ningún resultado equivale a aceptación externa.
+
 ```text
 src/algorithms/    Solucionadores puros, eventos y pruebas de algoritmos
 src/data/          problems.ts: enunciados; deep-dives.ts: derivaciones, ejemplos y rúbricas
@@ -86,7 +96,7 @@ Playwright prueba escritorio y viewport móvil con Chromium. Si ya hay un Chromi
 
 El servidor de pruebas usa `localhost`, igual que el servidor de desarrollo. Next.js puede rechazar recursos de desarrollo servidos bajo otros orígenes. Si necesitas acceso desde otro equipo, configura explícitamente los orígenes permitidos; no desactives esa protección globalmente.
 
-La segunda iteración tiene **24 grupos de pruebas Vitest** y **18 flujos Playwright** (nueve por tamaño de pantalla). Incluyen los tests originales, casos oficiales, oráculos independientes, entradas grandes de Q/U, recorrido de los once módulos, errores de entrada, reversibilidad, persistencia oral y predicciones. TypeScript y build de producción se comprueban aparte.
+La versión actual tiene **30 grupos de pruebas Vitest** y **22 flujos Playwright** (once por tamaño de pantalla). Incluyen los tests originales, casos oficiales, oráculos independientes, entradas grandes de Q/U, recorrido de los once módulos, errores de entrada, reversibilidad, persistencia oral y predicciones. La mejora de implementación añade integridad de fuentes descargables, ejemplos de llamada, estados y líneas de la ejecución directa de Compression, vistas de código y ejercicios persistentes. TypeScript y build de producción se comprueban aparte.
 
 Playwright usa un servidor exclusivo en **localhost:3100**, sin reutilizar un servidor antiguo en3000. Mantén libre ese puerto. En Windows, el entorno de ejecución puede necesitar finalizar el proceso hijo de Next al cerrar el servidor de pruebas; no afecta a los resultados de los flujos. No se han probado Safari/Firefox, lectores de pantalla ni dispositivos móviles físicos.
 

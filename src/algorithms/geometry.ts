@@ -24,9 +24,11 @@ function minimize(f: (x: number) => number, iterations: number) {
   for (let i = 0; i < iterations; i++) {
     const a = lo + (hi - lo) / 3,
       b = hi - (hi - lo) / 3;
+    // Por convexidad basta conservar dos tercios; comparar no exige derivadas.
     if (f(a) <= f(b)) hi = b;
     else lo = a;
   }
+  // Los extremos también pueden ser óptimos (esquinas o bases en contacto).
   const candidates = [0, 1, (lo + hi) / 2];
   let x = candidates[0],
     value = f(x);
@@ -101,6 +103,7 @@ const lower = (a: number[], x: number, upper = false) => {
 export function dicePoints(d1: number[], d2: number[]) {
   let a = d1.toSorted((x, y) => x - y),
     b = d2.toSorted((x, y) => x - y);
+  // Menores cuentan dos veces; iguales una: victoria=1 y empate=1/2.
   const score = (v: number, d: number[]) =>
     (lower(d, v) + lower(d, v, true)) / (2 * d.length);
   if (a.reduce((s, v) => s + score(v, b), 0) / a.length < 0.5) [a, b] = [b, a];
@@ -122,6 +125,7 @@ export function solveDice(d1: number[], d2: number[]) {
   const half = (arr: typeof points) => {
     const h: typeof points = [];
     for (const p of arr) {
+      // Cada punto se apila y desapila a lo sumo una vez: envolvente lineal.
       while (h.length > 1 && cross(h.at(-2)!, h.at(-1)!, p) <= 0) h.pop();
       h.push(p);
     }

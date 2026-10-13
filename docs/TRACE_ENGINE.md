@@ -1,5 +1,11 @@
 # Contrato del motor de trazas
 
+## Vinculación con código real
+
+`source` es opcional: `{ file, anchor, scope }`. `file` identifica el módulo del catálogo generado; `anchor` localiza una instrucción real (se resuelve de nuevo después de cambiar el archivo). `scope="instruction"` indica una instantánea después de esa instrucción; `scope="block"` muestra resultados de un bloque, sin afirmar que el intérprete se detuvo allí. `SourceSnapshot` presenta el fragmento y su número de línea. Los pasos matemáticos sin traza interna no reciben una ubicación ficticia.
+
+`compressionDirectTrace` observa llamadas a `compress`; no implementa de nuevo sus decisiones. La traza constructiva `compressionTrace` se conserva y se identifica como prueba de alcanzabilidad. Los valores previos al primer evento directo se presentan como no inicializados. Las instantáneas pueden añadir tiempo y memoria: las cotas de los solucionadores se describen sin almacenamiento educativo.
+
 `TraceEvent<S>` en `src/algorithms/trace.ts` representa una transición serializable:
 
 - `id`: posición determinista en la secuencia.

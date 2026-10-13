@@ -1,31 +1,17 @@
 "use client";
 import { useState } from "react";
 import { deepDives } from "@/data/deep-dives";
-export function Verification({ id }: { id: string }) {
-  const d = deepDives[id];
-  return (
-    <aside className="verification">
-      <strong>{d.status}</strong>
-      <p>{d.evidence}</p>
-      <details>
-        <summary>Alcance, límites y fuentes</summary>
-        <ul>
-          {d.limitations.map((s) => (
-            <li key={s}>{s}</li>
-          ))}
-        </ul>
-        {d.sources.map((s) => (
-          <p key={s.url}>
-            <a href={s.url} target="_blank" rel="noreferrer">
-              {s.title} ↗
-            </a>
-          </p>
-        ))}
-      </details>
-    </aside>
-  );
-}
-export function DeepLesson({ id }: { id: string }) {
+import CodeLesson from "./CodeLesson";
+import { Verification } from "./Verification";
+export function DeepLesson({
+  id,
+  answers,
+  onChange,
+}: {
+  id: string;
+  answers: Record<string, string>;
+  onChange: (answers: Record<string, string>) => void;
+}) {
   const d = deepDives[id];
   return (
     <>
@@ -41,7 +27,8 @@ export function DeepLesson({ id }: { id: string }) {
           </li>
         ))}
       </ol>
-      <h3>Pseudocódigo, línea por línea</h3>
+      <CodeLesson key={id} id={id} answers={answers} onChange={onChange} />
+      <h3>Resumen del algoritmo</h3>
       <ol className="explained-code">
         {d.code.map((c) => (
           <li key={c.line}>

@@ -41,6 +41,12 @@ export function checkTrack(track: string, trace = false) {
         invariant:
           "Cada pieza ocupa una celda distinta; el extremo avanza a la celda vecina.",
         partial: next.used,
+        source: {
+          file: "trains",
+          anchor:
+            'const nextD = (d + (piece === "L" ? 3 : piece === "R" ? 1 : 0)) % 4;',
+          scope: "block",
+        },
       });
     state = next;
   }
@@ -71,10 +77,12 @@ export function solveTrain(s: number, c: number) {
     c > 100000
   )
     throw Error("0 ≤ s ≤ 100000 y 4 ≤ c ≤ 100000.");
+  // Las cotas de cierre permiten usar solo cantidades pares.
   s -= s % 2;
   c -= c % 2;
   if (!s) {
     c -= c % 4;
+    // Excepción demostrada en la lección: sin rectas, ocho curvas no sirven.
     if (c === 8) c = 4;
   }
   let track: string,
@@ -92,6 +100,7 @@ export function solveTrain(s: number, c: number) {
   } else {
     base = !s ? "LRRLRRLRRLRR" : c % 4 === 0 ? "LSLLSL" : "LSLSLLRL";
     gaps = !s ? [0, 6] : [0, 3];
+    // Dos huecos reciben dos curvas cada uno por ampliación: cuatro en total.
     k = (c - [...base].filter((x) => x !== "S").length) / 4;
     t = !s ? 0 : (s - 2) / 2;
     const word = !s ? "LR" : "RL";

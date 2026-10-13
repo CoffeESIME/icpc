@@ -81,6 +81,7 @@ export function checkQuartets(
     }
     const occupied = Array(C).fill(-1),
       matching = Array(slots.length).fill(-1);
+    // Recolocar al dueño del hueco ocupado evita el error de un greedy irrevocable.
     const augment = (s: number, seen: Set<number>): boolean => {
       for (const c of slots[s].candidates)
         if (!seen.has(c)) {
@@ -137,6 +138,7 @@ export function checkQuartets(
       }
       if (a.yes) {
         reveal(a.card, a.from);
+        // Una transferencia cambia el dueño actual, nunca el reparto inicial.
         owners[a.card] = p;
       } else if (fixed[a.card] >= 0) {
         if (owners[a.card] === a.from)

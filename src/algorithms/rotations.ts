@@ -43,7 +43,9 @@ export function rotationClass(
           const p = parent[u];
           if (p >= 0) {
             low[p] = Math.min(low[p], low[u]);
+            // Estricto: no hay retorno al padre ni a un ancestro suyo.
             if (low[u] > tin[p]) bridges.add(pe[u]);
+            // No estricto: termina un bloque biconexo, aunque no sea un puente.
             if (low[u] >= tin[p]) {
               const b: number[] = [];
               let e: number;
@@ -104,6 +106,7 @@ export function rotationClass(
       const pattern = order.map((v) => target[v]),
         text = order.map((v) => start[v]),
         pi = Array(pattern.length).fill(0);
+      // KMP: pi permite reutilizar el prefijo ya comparado tras un fallo.
       for (let i = 1, j = 0; i < pattern.length; i++) {
         while (j && pattern[i] !== pattern[j]) j = pi[j - 1];
         if (pattern[i] === pattern[j]) j++;
@@ -122,6 +125,7 @@ export function rotationClass(
     }
     if (full[id])
       return { nodes, kind: "cualquier permutación", possible: same };
+    // Intercambiar dos copias iguales cambia paridad sin cambiar lo observable.
     const duplicate = sorted.some((v, i) => i > 0 && v === sorted[i - 1]);
     if (!same || duplicate)
       return {

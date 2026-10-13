@@ -2,6 +2,7 @@
 import { useEffect, useState, useId, type ReactNode } from "react";
 import { Play, Pause, SkipBack, ChevronLeft, ChevronRight } from "lucide-react";
 import type { TraceEvent } from "@/algorithms/trace";
+import { SourceSnapshot } from "./SourceCode";
 export default function TracePlayer<S>({
   events,
   code,
@@ -214,6 +215,7 @@ export default function TracePlayer<S>({
               </li>
             ))}
           </ol>
+          {e.source && <SourceSnapshot source={e.source} />}
         </>
       )}
     </div>

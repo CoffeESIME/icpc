@@ -4,12 +4,48 @@ export function validateBinary(s: string) {
   if (!/^[01]+$/.test(s))
     throw new Error("Escribe una cadena no vacía de ceros y unos.");
 }
-export function compress(s: string): string {
+export type CompressionSnapshot = {
+  line: string;
+  first: string;
+  last: string;
+  different: boolean;
+  i: number;
+  result: string;
+};
+export function compress(
+  s: string,
+  observe?: (state: CompressionSnapshot) => void,
+): string {
   validateBinary(s);
-  if (!s.includes(s[0] === "0" ? "1" : "0")) return s[0];
-  return s[0] !== s[s.length - 1]
-    ? s[0] + s[s.length - 1]
-    : s[0] + (s[0] === "0" ? "1" : "0") + s[0];
+  // Los índices empiezan en cero: el último es longitud menos uno.
+  const first = s[0];
+  const last = s[s.length - 1];
+  let different = false;
+  let i = 1;
+  let result = "";
+  // El observador es opcional: sin él no se almacenan instantáneas.
+  const report = (line: string) =>
+    observe?.({ line, first, last, different, i, result });
+  report("let different = false;");
+  // Invariante: different indica si el prefijo inspeccionado contiene otro bit.
+  for (; i < s.length; i++) {
+    if (s[i] !== first) different = true;
+    report("if (s[i] !== first) different = true;");
+  }
+  // Tres casos exhaustivos. No necesitamos modificar la cadena original.
+  if (!different) {
+    result = first;
+    report("result = first;");
+  } else if (first !== last) {
+    result = first + last;
+    report("result = first + last;");
+  } else {
+    const other = first === "0" ? "1" : "0";
+    result = first + other + last;
+    report("result = first + other + last;");
+  }
+  report("return result;");
+  return result;
 }
 export function reductions(s: string): Reduction[] {
   validateBinary(s);

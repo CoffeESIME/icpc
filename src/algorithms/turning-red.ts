@@ -114,6 +114,27 @@ export function solveRed(input: Lights, withTrace = false): RedResult {
         "Cada luz comprobada exige (color + suma de pulsaciones) mod 3 = 0.",
       partial:
         after.valid === false ? "Intento incompatible" : String(after.cost),
+      source: {
+        file: "turning-red",
+        anchor: (
+          {
+            "Preparar restricciones":
+              "const adj: { to: number; color: number; light: number }[][] = Array.from(",
+            "Luz sin control": "if (own[l].length === 0 && colors[l] !== 0) {",
+            "Fijar raíz": "values[root] = trial;",
+            Propagar: "const forced = mod(-e.color - values[u]);",
+            Contradicción: "} else if (values[e.to] !== forced) {",
+            "Restricción incumplida": "if (mod(sum) !== 0) {",
+            "Intento válido":
+              "const cost = component.reduce((s, u) => s + values[u], 0);",
+            "Elegir mínimo de componente": "component.forEach((u, i) => {",
+            Imposible: "if (best === Infinity) {",
+            "Solución mínima":
+              "return { cost: total, presses: answer, trace };",
+          } as Record<string, string>
+        )[operation],
+        scope: "block",
+      },
     });
     current = after;
   };
@@ -190,6 +211,7 @@ export function solveRed(input: Lights, withTrace = false): RedResult {
       while (todo.length && valid) {
         const u = todo.pop()!;
         for (const e of adj[u]) {
+          // color + x_u + x_v ≡ 0 (mod 3): fijar x_u determina x_v.
           const forced = mod(-e.color - values[u]);
           if (values[e.to] === -1) {
             values[e.to] = forced;

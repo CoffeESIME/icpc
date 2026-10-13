@@ -21,7 +21,7 @@ import {
   ModularView,
   MatchingView,
 } from "./EducationalViews";
-import { Verification } from "./DeepLesson";
+import { Verification } from "./Verification";
 
 function ManualWalk({ id }: { id: string }) {
   const d = deepDives[id];
@@ -86,6 +86,11 @@ function BridgeWalk() {
       };
       event(out, state, next, {
         operation: `F(${cell.n},${cell.e})`,
+        source: {
+          file: "extended",
+          anchor: cell.i < 0 ? "dp[n][e] = t[n];" : "dp[n][e] = best;",
+          scope: "instruction",
+        },
         explanation:
           cell.i < 0
             ? "Todos cruzan una vez; el coste es el tiempo mayor."
@@ -305,6 +310,11 @@ function QuartetWalk() {
         };
       event(out, previous, s, {
         operation: `Acción ${i + 1}`,
+        source: {
+          file: "quartets",
+          anchor: "const match = () => {",
+          scope: "block",
+        },
         explanation:
           i === 3 && alternate
             ? "Se niega 3B, no 3C: J1 aún puede haber tenido3C y J2 haber tenido3B."
@@ -417,6 +427,17 @@ function LeverWalk() {
         s,
         {
           operation: s.title,
+          source: {
+            file: "extended",
+            anchor: [
+              "export function solveLevers",
+              "const projections = vectors.map((x) => {",
+              "const zeros = mass([]),",
+              "export function leverDistribution",
+              "const shift = vectors.findIndex(",
+            ][i],
+            scope: "block",
+          },
           explanation: [
             "El algoritmo solo recibe el multiconjunto, no las palancas configuradas.",
             "Agrupar por producto escalar y extraer factores de2.",

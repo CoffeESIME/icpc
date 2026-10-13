@@ -10,6 +10,8 @@ export type TraceEvent<S> = {
   variables: Record<string, string | number>;
   invariant: string;
   partial: string;
+  /** Exact repository instruction that produced this snapshot, or a completed block. */
+  source?: { file: string; anchor: string; scope: "instruction" | "block" };
 };
 export function event<S>(
   events: TraceEvent<S>[],
