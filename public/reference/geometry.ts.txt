@@ -106,7 +106,9 @@ export function dicePoints(d1: number[], d2: number[]) {
   // Menores cuentan dos veces; iguales una: victoria=1 y empate=1/2.
   const score = (v: number, d: number[]) =>
     (lower(d, v) + lower(d, v, true)) / (2 * d.length);
-  if (a.reduce((s, v) => s + score(v, b), 0) / a.length < 0.5) [a, b] = [b, a];
+  // Comparar el numerador entero evita invertir dados empatados por redondeo.
+  const winsTwice = a.reduce((s, v) => s + lower(b, v) + lower(b, v, true), 0);
+  if (winsTwice < a.length * b.length) [a, b] = [b, a];
   const values = [
     ...new Set([1, ...a, ...b, ...a.map((x) => x + 1), ...b.map((x) => x + 1)]),
   ].sort((x, y) => x - y);

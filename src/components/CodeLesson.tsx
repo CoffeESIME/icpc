@@ -9,6 +9,7 @@ import { SourceCode, sourceLine, sources } from "./SourceCode";
 import TurningRedLab from "./TurningRedLab";
 import { LiarLab, TrainLab, QueueLab } from "./ExtendedLabs";
 import GuidedLab from "./GuidedLabs";
+import PythonCode from "./PythonCode";
 
 const views = [
   "Pseudocódigo",
@@ -84,6 +85,8 @@ export default function CodeLesson({
     (x) => x.name === lesson.entry,
   )!;
   const visible = view === 2 || revealed.includes(view);
+  const language =
+    answers["code:language"] === "python" ? "python" : "typescript";
   return (
     <section className="code-lesson" aria-label="De la idea al código">
       <span className="eyebrow">IMPLEMENTAR Y RECONSTRUIR</span>
@@ -104,6 +107,28 @@ export default function CodeLesson({
           </button>
         ))}
       </div>
+      {view === 1 && (
+        <div
+          className="code-tabs"
+          role="group"
+          aria-label="Lenguaje del código"
+        >
+          <button
+            aria-pressed={language === "typescript"}
+            onClick={() =>
+              onChange({ ...answers, "code:language": "typescript" })
+            }
+          >
+            TypeScript
+          </button>
+          <button
+            aria-pressed={language === "python"}
+            onClick={() => onChange({ ...answers, "code:language": "python" })}
+          >
+            Python
+          </button>
+        </div>
+      )}
       {!visible && (
         <div className="code-attempt">
           <p>
@@ -146,7 +171,8 @@ export default function CodeLesson({
           ))}
         </ol>
       )}
-      {visible && view === 1 && (
+      {visible && view === 1 && language === "python" && <PythonCode id={id} />}
+      {visible && view === 1 && language === "typescript" && (
         <>
           <p>
             Función de entrada: <code>{lesson.entry}</code>. Los argumentos son

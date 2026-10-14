@@ -84,6 +84,62 @@ test("eleven modules expose hidden code, detailed steps, source and recoverable 
   }
   expect(errors).toEqual([]);
 });
+test("Python is available in all eleven modules and the language choice persists", async ({
+  page,
+}) => {
+  test.setTimeout(90000);
+  await page.goto("/");
+  for (const problem of problems) {
+    await open(page, problem.name);
+    const section = page.getByRole("region", { name: "De la idea al código" });
+    await section
+      .getByRole("button", { name: "Código completo", exact: true })
+      .click();
+    await section.getByRole("button", { name: "Python", exact: true }).click();
+    await expect(section.locator(".source-code")).toHaveCount(0);
+    await section
+      .getByRole("button", {
+        name: "Terminar intento y ver código completo",
+        exact: true,
+      })
+      .click();
+    await expect(
+      section.getByRole("button", { name: "Python", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(
+      section.locator(".python-reference .source-code"),
+    ).toContainText("def ");
+    const link = section.getByRole("link", {
+      name: /Descargar src\/algorithms\/python\//,
+    });
+    const response = await page.request.get((await link.getAttribute("href"))!);
+    expect(response.ok()).toBe(true);
+    expect(await response.text()).toContain('if __name__ == "__main__":');
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth + 1,
+      ),
+    ).toBe(true);
+    await section
+      .getByRole("button", { name: "TypeScript", exact: true })
+      .click();
+    await expect(section.locator(".python-reference")).toHaveCount(0);
+    await expect(section.locator(".source-code").first()).toContainText(
+      "export function",
+    );
+    await section.getByRole("button", { name: "Python", exact: true }).click();
+  }
+  await page.reload();
+  await open(page, "Compression");
+  const section = page.getByRole("region", { name: "De la idea al código" });
+  await section
+    .getByRole("button", { name: "Código completo", exact: true })
+    .click();
+  await expect(
+    section.getByRole("button", { name: "Python", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(section.locator(".source-code")).toHaveCount(0);
+});
 test("Compression direct execution follows source lines; attempts persist, solutions reset", async ({
   page,
 }) => {

@@ -1,6 +1,11 @@
 import { it, expect } from "vitest";
 import { solvePyramids, solveDice, dicePoints } from "./geometry";
 import { unfoldedReference } from "./unfolding-reference";
+it("V: exact ties keep input orientation without floating-point reversal", () => {
+  const points = dicePoints([1, 4, 3, 4], [4, 1, 2, 3, 8]);
+  expect(points.find((p) => p.v === 2)).toEqual({ v: 2, x: 0.25, y: 0.3 });
+  expect(solveDice([1, 4, 3, 4], [4, 1, 2, 3, 8]).minimum).toBeCloseTo(0.4, 12);
+});
 it("T: official answer, symmetric analytic solution, touching bases and order symmetry", () => {
   expect(
     solvePyramids([0, 0, 10, 0, 4], [9, 18, 34, 26, 42]).answer,

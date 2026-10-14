@@ -38,3 +38,29 @@ writeFileSync(
   "src/data/code-catalog.json",
   JSON.stringify(catalog, null, 2) + "\n",
 );
+
+const pythonFiles = {
+  Y: "compression",
+  P: "turning_red",
+  Q: "queue",
+  W: "liar",
+  U: "trains",
+  S: "bridge",
+  R: "rotations",
+  X: "quartets",
+  T: "pyramids",
+  V: "dice",
+  Z: "levers",
+};
+const pythonCatalog = {};
+mkdirSync("public/reference/python", { recursive: true });
+for (const [id, name] of Object.entries(pythonFiles)) {
+  const path = `src/algorithms/python/${name}.py`;
+  const code = readFileSync(path, "utf8").replaceAll("\r\n", "\n");
+  pythonCatalog[id] = { name, path, code };
+  writeFileSync(`public/reference/python/${name}.py.txt`, code);
+}
+writeFileSync(
+  "src/data/python-catalog.json",
+  JSON.stringify(pythonCatalog, null, 2) + "\n",
+);

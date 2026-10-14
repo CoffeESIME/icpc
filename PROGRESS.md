@@ -1,5 +1,15 @@
 # Avance · ICPC Algorithm Lab
 
+## 2026-10-13 · Opción Python
+
+- Añadido selector **TypeScript / Python** dentro de Código completo en los once problemas. Visible antes de revelar, respeta la ocultación inicial y guarda la preferencia por módulo con el progreso existente.
+- Once archivos Python 3.10+ completos en `src/algorithms/python/`, con comentarios, auxiliares, salidas documentadas y ejemplo ejecutable. Solo biblioteca estándar. Catálogo y descargas generados desde esos mismos archivos.
+- Las visualizaciones y ejercicios siguen usando TypeScript; la interfaz lo indica. Python expone el resultado de cada solucionador sin duplicar el historial visual. No se le atribuyen aceptación externa ni pruebas de rendimiento en límites máximos. S permanece parcialmente verificado.
+- Comparación real mediante un proceso Python: ejemplos oficiales no interactivos y **3027 casos adicionales**, incluidas todas las cadenas binarias hasta nueve bits, 567 inventarios U, 384 escenarios de mentira W, casos deterministas de P/Q/S/V/Z/R/X, conteos 2^40 y tres contrastes geométricos con oráculo independiente. Validación de siete entradas inválidas y copias descargables.
+- El contraste detectó un problema previo en V: una media flotante de un empate exacto podía invertir los dados. TypeScript y Python ahora deciden la orientación con numeradores enteros; se añadió regresión para ese empate.
+- Validación: **35 grupos Vitest**, **24 flujos Playwright** (escritorio y móvil), TypeScript y build de producción. Los nuevos flujos recorren el selector y las descargas de los once módulos, la vuelta a TypeScript y la persistencia sin revelar automáticamente.
+- Para ejecutar la suite se necesita Python 3.10+ (`python` o variable `PYTHON`). El build y el navegador no requieren un intérprete Python.
+
 ## 2026-10-13 · De la idea al código
 
 ### Implementado

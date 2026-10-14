@@ -7,3 +7,4 @@ research/statements.txt
 research/solutions.txt
 research/solutions.pdf
 tmp/
+__pycache__/
